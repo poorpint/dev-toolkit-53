@@ -1,14 +1,44 @@
-export async function retry<T>(fn: () => Promise<T>, retries: number, delay: number): Promise<T> {
-    for (let i = 0; i < retries; i++) {
-        try {
-            return await fn();
-        } catch (error) {
-            if (i === retries - 1) throw error;
-            await new Promise(res => setTimeout(res, delay));
-        }
-    }
+export function isEmpty(obj: object): boolean {
+    return Object.keys(obj).length === 0;
 }
 
-export const fetchWithRetry = async (url: string, options: RequestInit = {}, retries = 3, delay = 1000): Promise<Response> => {
-    return await retry(() => fetch(url, options), retries, delay);
-};
+export function deepClone<T>(obj: T): T {
+    return JSON.parse(JSON.stringify(obj));
+}
+
+export function debounce(func: Function, wait: number): Function {
+    let timeout: NodeJS.Timeout;
+    return function executedFunction(...args: any) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+export function throttle(func: Function, limit: number): Function {
+    let lastFunc: NodeJS.Timeout;
+    let lastRan: number;
+    return function() {
+        const context = this;
+        const args = arguments;
+        if (!lastRan) {
+            func.apply(context, args);
+            lastRan = Date.now();
+        } else {
+            clearTimeout(lastFunc);
+            lastFunc = setTimeout(function() {
+                if ((Date.now() - lastRan) >= limit) {
+                    func.apply(context, args);
+                    lastRan = Date.now();
+                }
+            }, limit - (Date.now() - lastRan));
+        }
+    };
+}
+
+export function randomInt(min: number, max: number): number {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
