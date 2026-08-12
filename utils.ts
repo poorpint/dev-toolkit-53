@@ -1,44 +1,24 @@
-export function isEmpty(obj: object): boolean {
-    return Object.keys(obj).length === 0;
+export function isValidInput(input: any): boolean {
+    if (typeof input !== 'number') return false;
+    if (input < 0) return false;
+    return true;
 }
 
-export function deepClone<T>(obj: T): T {
-    return JSON.parse(JSON.stringify(obj));
+export function processInput(input: number): string {
+    if (!isValidInput(input)) {
+        throw new Error('Invalid input: must be a non-negative number.');
+    }
+    // Processing logic here  
+    return `Processed: ${input}`;
 }
 
-export function debounce(func: Function, wait: number): Function {
-    let timeout: NodeJS.Timeout;
-    return function executedFunction(...args: any) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-export function throttle(func: Function, limit: number): Function {
-    let lastFunc: NodeJS.Timeout;
-    let lastRan: number;
-    return function() {
-        const context = this;
-        const args = arguments;
-        if (!lastRan) {
-            func.apply(context, args);
-            lastRan = Date.now();
-        } else {
-            clearTimeout(lastFunc);
-            lastFunc = setTimeout(function() {
-                if ((Date.now() - lastRan) >= limit) {
-                    func.apply(context, args);
-                    lastRan = Date.now();
-                }
-            }, limit - (Date.now() - lastRan));
+export function mainLoop(inputs: number[]): void {
+    inputs.forEach((input) => {
+        try {
+            const result = processInput(input);
+            console.log(result);
+        } catch (error) {
+            console.error(error.message);
         }
-    };
-}
-
-export function randomInt(min: number, max: number): number {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+    });
 }
