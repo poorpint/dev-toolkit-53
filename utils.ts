@@ -1,24 +1,22 @@
-export function isValidInput(input: any): boolean {
-    if (typeof input !== 'number') return false;
-    if (input < 0) return false;
-    return true;
-}
+export interface ClickData { timestamp: number; button: string; position: { x: number; y: number; }; }
 
-export function processInput(input: number): string {
-    if (!isValidInput(input)) {
-        throw new Error('Invalid input: must be a non-negative number.');
+export class AutoClicker {
+    private clickRecords: ClickData[] = [];
+    
+    logClick(button: string, position: { x: number; y: number; }): void {
+        const record: ClickData = { 
+            timestamp: Date.now(), 
+            button, 
+            position 
+        }; 
+        this.clickRecords.push(record);
     }
-    // Processing logic here  
-    return `Processed: ${input}`;
-}
-
-export function mainLoop(inputs: number[]): void {
-    inputs.forEach((input) => {
-        try {
-            const result = processInput(input);
-            console.log(result);
-        } catch (error) {
-            console.error(error.message);
-        }
-    });
+    
+    getClickData(): ClickData[] {
+        return this.clickRecords;
+    }
+    
+    clearClickData(): void {
+        this.clickRecords = [];
+    }
 }
