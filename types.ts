@@ -1,0 +1,1 @@
+export interface ClickerConfig { interval: number; repetitions: number; }; export function validateConfig(config: ClickerConfig): boolean { if (config.interval <= 0) return false; if (config.repetitions <= 0) return false; return true; }
