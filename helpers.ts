@@ -1,1 +1,31 @@
-export function debounce(func: Function, delay: number) { let timeoutId: ReturnType<typeof setTimeout>; return function(...args: any[]) { if (timeoutId) clearTimeout(timeoutId); timeoutId = setTimeout(() => func.apply(this, args), delay); }; } export function throttle(func: Function, limit: number) { let lastFunc: ReturnType<typeof setTimeout>; let lastRan: number; return function(...args: any[]) { const context = this; if (!lastRan) { func.apply(context, args); lastRan = Date.now(); } else { clearTimeout(lastFunc); lastFunc = setTimeout(function() { if ((Date.now() - lastRan) >= limit) { func.apply(context, args); lastRan = Date.now(); } }, limit - (Date.now() - lastRan)); } }; } export function isObject(value: any): value is Record<string, unknown> { return value && typeof value === 'object' && !Array.isArray(value); }
+export function delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+export function isInteger(value: number): boolean {
+    return Number.isInteger(value);
+}
+
+export function randomInteger(min: number, max: number): number {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+export function clamp(value: number, min: number, max: number): number {
+    return Math.max(min, Math.min(value, max));
+}
+
+export function formatTimestamp(timestamp: number): string {
+    const date = new Date(timestamp);
+    return date.toISOString();
+}
+
+export function generateRandomClickPositions(count: number, minX: number, maxX: number, minY: number, maxY: number): { x: number, y: number }[] {
+    const positions = [];
+    for (let i = 0; i < count; i++) {
+        positions.push({
+            x: randomInteger(minX, maxX),
+            y: randomInteger(minY, maxY)
+        });
+    }
+    return positions;
+}
