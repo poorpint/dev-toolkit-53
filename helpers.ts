@@ -1,31 +1,33 @@
-export function delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+import fs from 'fs';
+import path from 'path';
+import { createLogger, format, transports } from 'winston';
+
+const logDirectory = path.join(__dirname, 'logs');
+
+if (!fs.existsSync(logDirectory)) {
+    fs.mkdirSync(logDirectory);
 }
 
-export function isInteger(value: number): boolean {
-    return Number.isInteger(value);
-}
+const logger = createLogger({
+    level: 'info',
+    format: format.combine(
+        format.timestamp(),
+        format.json()
+    ),
+    transports: [
+        new transports.File({
+            filename: path.join(logDirectory, 'combined.log'),
+            maxsize: 5242880,  // 5MB
+            maxFiles: '5d',
+            zippedArchive: true
+        }),
+        new transports.Console({
+            format: format.combine(
+                format.colorize(),
+                format.simple()
+            )
+        })
+    ]
+});
 
-export function randomInteger(min: number, max: number): number {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-export function clamp(value: number, min: number, max: number): number {
-    return Math.max(min, Math.min(value, max));
-}
-
-export function formatTimestamp(timestamp: number): string {
-    const date = new Date(timestamp);
-    return date.toISOString();
-}
-
-export function generateRandomClickPositions(count: number, minX: number, maxX: number, minY: number, maxY: number): { x: number, y: number }[] {
-    const positions = [];
-    for (let i = 0; i < count; i++) {
-        positions.push({
-            x: randomInteger(minX, maxX),
-            y: randomInteger(minY, maxY)
-        });
-    }
-    return positions;
-}
+export default logger;
