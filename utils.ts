@@ -1,16 +1,17 @@
-export function validateInput(input: string): boolean {
-    const validPattern = /^[a-zA-Z0-9]+$/;
-    return validPattern.test(input);
-}
-
-export function mainProcessingLoop(inputs: string[]): void {
-    inputs.forEach((input) => {
-        if (!validateInput(input)) {
-            console.error(`Invalid input: ${input}`);
-            return;
+export const retryOperation = async <T>(operation: () => Promise<T>, retries: number, delay: number): Promise<T> => {
+    for (let attempt = 0; attempt < retries; attempt++) {
+        try {
+            return await operation();
+        } catch (error) {
+            if (attempt < retries - 1) {
+                await new Promise(res => setTimeout(res, delay));
+            } else {
+                throw error;
+            }
         }
-        // Proceed with main processing if input is valid
-        console.log(`Processing: ${input}`);
-        // Additional processing logic here
-    });
-}
+    }
+};
+
+export const fetchWithRetry = async (url: string, options: RequestInit = {}, retries: number = 3, delay: number = 1000): Promise<Response> => {
+    return retryOperation(() => fetch(url, options), retries, delay);
+};
