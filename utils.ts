@@ -1,17 +1,27 @@
-export const retryOperation = async <T>(operation: () => Promise<T>, retries: number, delay: number): Promise<T> => {
-    for (let attempt = 0; attempt < retries; attempt++) {
-        try {
-            return await operation();
-        } catch (error) {
-            if (attempt < retries - 1) {
-                await new Promise(res => setTimeout(res, delay));
-            } else {
-                throw error;
-            }
-        }
-    }
-};
+import { createLogger, format, transports } from 'winston';
+import * as path from 'path';
 
-export const fetchWithRetry = async (url: string, options: RequestInit = {}, retries: number = 3, delay: number = 1000): Promise<Response> => {
-    return retryOperation(() => fetch(url, options), retries, delay);
-};
+const logDirectory = path.join(__dirname, '../logs');
+
+const transport = new transports.File({
+  filename: path.join(logDirectory, 'app-%DATE%.log'),
+  datePattern: 'YYYY-MM-DD',
+  zippedArchive: true,
+  maxSize: '20m',
+  maxFiles: '14d',
+});
+
+const logger = createLogger({
+  format: format.combine(
+    format.timestamp(),
+    format.json()
+  ),
+  transports: [
+    transport,
+    new transports.Console(),
+  ],
+});
+
+export const logInfo = (message: string) => logger.info(message);
+export const logError = (message: string) => logger.error(message);
+export const logWarning = (message: string) => logger.warn(message);
