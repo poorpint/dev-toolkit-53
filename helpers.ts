@@ -1,33 +1,18 @@
-import fs from 'fs';
-import path from 'path';
-import { createLogger, format, transports } from 'winston';
+export const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
 
-const logDirectory = path.join(__dirname, 'logs');
+export const isValidClickInterval = (interval: number): boolean => interval > 0;
 
-if (!fs.existsSync(logDirectory)) {
-    fs.mkdirSync(logDirectory);
-}
+export const getRandomInterval = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
 
-const logger = createLogger({
-    level: 'info',
-    format: format.combine(
-        format.timestamp(),
-        format.json()
-    ),
-    transports: [
-        new transports.File({
-            filename: path.join(logDirectory, 'combined.log'),
-            maxsize: 5242880,  // 5MB
-            maxFiles: '5d',
-            zippedArchive: true
-        }),
-        new transports.Console({
-            format: format.combine(
-                format.colorize(),
-                format.simple()
-            )
-        })
-    ]
-});
+export const cloneObject = <T>(obj: T): T => JSON.parse(JSON.stringify(obj));
 
-export default logger;
+export const mergeObjects = <T, U>(obj1: T, obj2: U): T & U => ({ ...obj1, ...obj2 });
+
+export const isNullOrUndefined = <T>(value: T): value is null | undefined => value === null || value === undefined;
+
+export const formatTime = (milliseconds: number): string => {
+    const seconds = Math.floor((milliseconds / 1000) % 60);
+    const minutes = Math.floor((milliseconds / (1000 * 60)) % 60);
+    const hours = Math.floor(milliseconds / (1000 * 60 * 60));
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+};
