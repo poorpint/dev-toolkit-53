@@ -1,38 +1,29 @@
-import fs from 'fs';
-import path from 'path';
-import { createLogger, format, transports } from 'winston';
+type ClickConfig = { interval: number; duration: number; maxClicks: number; };
 
-const logDir = path.join(__dirname, 'log');
-
-if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir);
+function validateConfig(config: ClickConfig): boolean {  
+    if (config.interval < 100 || config.duration < 100 || config.maxClicks <= 0) {  
+        console.error('Invalid configuration parameters.');  
+        return false;  
+    }  
+    return true;  
 }
 
-const logger = createLogger({
-  level: 'info',
-  format: format.combine(
-    format.timestamp(),
-    format.json(),
-  ),
-  transports: [
-    new transports.File({
-      filename: path.join(logDir, 'error.log'),
-      level: 'error',
-      handleExceptions: true,
-    }),
-    new transports.File({
-      filename: path.join(logDir, 'combined.log'),
-      maxsize: 5242880,
-      maxFiles: '5d',
-      tailable: true,
-    }),
-  ],
-});
+function autoclick(config: ClickConfig): void {  
+    if (!validateConfig(config)) return;  
+    let { interval, duration, maxClicks } = config;  
+    let clicks = 0;  
+    const startTime = Date.now();  
 
-logger.add(
-  new transports.Console({
-    format: format.simple(),
-  })
-);
+    const clickInterval = setInterval(() => {  
+        if (clicks < maxClicks && (Date.now() - startTime) < duration) {  
+            console.log('Click!');  
+            clicks++;  
+        } else {  
+            clearInterval(clickInterval);  
+        }  
+    }, interval);  
+}
 
-export default logger;
+// Usage example  
+const config: ClickConfig = { interval: 500, duration: 5000, maxClicks: 10 };  
+autoclick(config);
