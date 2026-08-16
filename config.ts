@@ -1,24 +1,24 @@
-export interface AutoClickerConfig {
-  clickInterval: number;
-  clickCount: number;
-  targetElement: string;
+export interface Config {
+    clickInterval: number;
+    maxClicks: number;
 }
 
-export const defaultConfig: AutoClickerConfig = {
-  clickInterval: 100,
-  clickCount: 10,
-  targetElement: '.target'
-};
-
-export function validateConfig(config: Partial<AutoClickerConfig>): AutoClickerConfig {
-  return {
-    clickInterval: config.clickInterval ?? defaultConfig.clickInterval,
-    clickCount: config.clickCount ?? defaultConfig.clickCount,
-    targetElement: config.targetElement ?? defaultConfig.targetElement,
-  };
+export function validateConfig(config: Config): void {
+    if (config.clickInterval <= 0) {
+        throw new Error('Click interval must be greater than 0');
+    }
+    if (config.maxClicks <= 0) {
+        throw new Error('Max clicks must be greater than 0');
+    }
 }
 
-export function updateConfig(newConfig: Partial<AutoClickerConfig>): AutoClickerConfig {
-  const validatedConfig = validateConfig(newConfig);
-  return { ...validatedConfig };
+export function loadConfig(): Config {
+    const config: Config = { clickInterval: 1000, maxClicks: 100 };
+    try {
+        validateConfig(config);
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+    return config;
 }
