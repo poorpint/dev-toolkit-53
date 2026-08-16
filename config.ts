@@ -1,24 +1,23 @@
-export interface Config {
+import fs from 'fs';
+
+interface Config {
     clickInterval: number;
     maxClicks: number;
+    enabled: boolean;
 }
 
-export function validateConfig(config: Config): void {
-    if (config.clickInterval <= 0) {
-        throw new Error('Click interval must be greater than 0');
+const defaultConfig: Config = {
+    clickInterval: 100,
+    maxClicks: 1000,
+    enabled: true,
+};
+
+function loadConfig(filePath: string): Config {
+    if (!fs.existsSync(filePath)) {
+        return defaultConfig;
     }
-    if (config.maxClicks <= 0) {
-        throw new Error('Max clicks must be greater than 0');
-    }
+    const fileConfig = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    return { ...defaultConfig, ...fileConfig };
 }
 
-export function loadConfig(): Config {
-    const config: Config = { clickInterval: 1000, maxClicks: 100 };
-    try {
-        validateConfig(config);
-    } catch (error) {
-        console.error(error);
-        throw error;
-    }
-    return config;
-}
+export { loadConfig, Config };
