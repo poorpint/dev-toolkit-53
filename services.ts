@@ -1,29 +1,28 @@
-type ClickConfig = { interval: number; duration: number; maxClicks: number; };
+import axios, { AxiosError } from 'axios';
 
-function validateConfig(config: ClickConfig): boolean {  
-    if (config.interval < 100 || config.duration < 100 || config.maxClicks <= 0) {  
-        console.error('Invalid configuration parameters.');  
-        return false;  
-    }  
-    return true;  
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000;
+
+async function retryNetworkOperation<T>(operation: () => Promise<T>): Promise<T> {
+    let attempts = 0;
+
+    while (attempts < MAX_RETRIES) {
+        try {
+            return await operation();
+        } catch (error) {
+            if (!(error instanceof AxiosError)) throw error;
+            attempts++;
+            if (attempts < MAX_RETRIES) {
+                await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+            }
+        }
+    }
+
+    throw new Error('Max retries exceeded');
 }
 
-function autoclick(config: ClickConfig): void {  
-    if (!validateConfig(config)) return;  
-    let { interval, duration, maxClicks } = config;  
-    let clicks = 0;  
-    const startTime = Date.now();  
+export const fetchData = async (url: string) => {
+    return retryNetworkOperation(() => axios.get(url));
+};
 
-    const clickInterval = setInterval(() => {  
-        if (clicks < maxClicks && (Date.now() - startTime) < duration) {  
-            console.log('Click!');  
-            clicks++;  
-        } else {  
-            clearInterval(clickInterval);  
-        }  
-    }, interval);  
-}
-
-// Usage example  
-const config: ClickConfig = { interval: 500, duration: 5000, maxClicks: 10 };  
-autoclick(config);
+export default retryNetworkOperation;
