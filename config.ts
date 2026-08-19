@@ -1,19 +1,31 @@
-export interface NetworkOptions {
-  retries: number;
-  delay: number;
+import fs from 'fs';
+import path from 'path';
+
+interface Config {  
+    clickInterval: number;  
+    maxClicks: number;  
+    isEnabled: boolean;
 }
 
-export async function retry<T>(fn: () => Promise<T>, options: NetworkOptions): Promise<T> {
-  const { retries, delay } = options;
-  let attempts = 0;
-  while (attempts < retries) {
-    try {
-      return await fn();
-    } catch (error) {
-      attempts++;
-      if (attempts === retries) throw error;
-      await new Promise(res => setTimeout(res, delay));
+const DEFAULT_CONFIG: Config = {  
+    clickInterval: 1000,  
+    maxClicks: 100,  
+    isEnabled: true,
+};
+
+function loadConfig(filePath: string): Config {  
+    if (!fs.existsSync(filePath)) {  
+        return DEFAULT_CONFIG;  
     }
-  }
-  throw new Error('Max retries reached');
+    const rawData = fs.readFileSync(filePath, 'utf-8');  
+    try {  
+        const config = JSON.parse(rawData);  
+        return { ...DEFAULT_CONFIG, ...config };  
+    } catch {  
+        return DEFAULT_CONFIG;  
+    }
 }
+
+const configPath = path.resolve(__dirname, 'config.json');
+const config = loadConfig(configPath);
+export default config;
