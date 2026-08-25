@@ -1,71 +1,58 @@
-export interface ClickEvent {
-    target: HTMLElement;
-    delay: number;
-    duration: number;
+export interface AutoclickerOptions {
+  delay: number;
+  maxClicks: number;
+  x: number;
+  y: number;
+  randomFactor: number;
 }
 
-export type ClickerState = 'active' | 'paused' | 'stopped';
+export type Coordinates = {
+  x: number;
+  y: number;
+};
 
-export interface Config {
-    clickInterval: number;
-    maxClicks: number;
-    randomDelay: boolean;
+export function getRandomizedCoordinates(options: AutoclickerOptions): Coordinates {
+  const offset = Math.random() * options.randomFactor - options.randomFactor / 2;
+  return {
+    x: options.x + offset,
+    y: options.y + offset
+  };
 }
 
-export interface PerformanceMetrics {
-    totalClicks: number;
-    clickRate: number;
+export function shouldContinue(currentClicks: number, maxClicks: number): boolean {
+  return currentClicks < maxClicks;
 }
 
-export interface AutoClicker {
-    start(config: Config): void;
-    stop(): void;
-    pause(): void;
-    resume(): void;
-    getMetrics(): PerformanceMetrics;
+export function computeDelay(baseDelay: number, factor: number): number {
+  return baseDelay * (1 + Math.random() * factor);
 }
 
-export function createAutoClicker(): AutoClicker {
-    let state: ClickerState = 'stopped';
-    let totalClicks = 0;
-    let intervalId: NodeJS.Timeout | null = null;
+export function validateCoordinates(coords: Coordinates): boolean {
+  return coords.x > 0 && coords.y > 0;
+}
 
-    return {
-        start(config: Config) {
-            if (state === 'active') return;
-            state = 'active';
-            totalClicks = 0;
-            intervalId = setInterval(() => {
-                if (totalClicks < config.maxClicks) {
-                    document.dispatchEvent(new Event('click'));
-                    totalClicks++;
-                } else {
-                    this.stop();
-                }
-            }, config.clickInterval);
-        },
-        stop() {
-            state = 'stopped';
-            if (intervalId) {
-                clearInterval(intervalId);
-                intervalId = null;
-            }
-        },
-        pause() {
-            state = 'paused';
-            if (intervalId) {
-                clearInterval(intervalId);
-                intervalId = null;
-            }
-        },
-        resume() {
-            if (state === 'paused') {
-                state = 'active';
-                this.start({ clickInterval: 100, maxClicks: 1000, randomDelay: false });
-            }
-        },
-        getMetrics() {
-            return { totalClicks, clickRate: totalClicks / (totalClicks > 0 ? (Date.now() / 1000) : 1)};
-        }
-    };
+export function buildClickPayload(coords: Coordinates, time: number): {x: number, y: number, t: number} {
+  return {x: coords.x, y: coords.y, t: time};
+}
+
+export function delayToInterval(delay: number): number {
+  return Math.floor(delay / 1000);
+}
+
+export function resetCounter(): number {
+  return 0;
+}
+
+export function incrementClick(count: number): number {
+  return count + 1;
+}
+
+export function isClickTime(currentTime: number, nextTime: number): boolean {
+  return currentTime >= nextTime;
+}
+
+export function calculateAverageDelay(delays: number[]): number {
+  if (delays.length === 0) return 0;
+  const sum = delays.reduce((a, b) => a + b, 0);
+  return sum / delays.length;
 }
