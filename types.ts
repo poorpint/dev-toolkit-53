@@ -1,58 +1,57 @@
-export interface AutoclickerOptions {
-  delay: number;
-  maxClicks: number;
+export interface Position {
   x: number;
   y: number;
-  randomFactor: number;
 }
-
-export type Coordinates = {
-  x: number;
-  y: number;
-};
-
-export function getRandomizedCoordinates(options: AutoclickerOptions): Coordinates {
-  const offset = Math.random() * options.randomFactor - options.randomFactor / 2;
-  return {
-    x: options.x + offset,
-    y: options.y + offset
-  };
+export interface ClickData {
+  position: Position;
+  delayMs: number;
+  button: number;
 }
-
-export function shouldContinue(currentClicks: number, maxClicks: number): boolean {
-  return currentClicks < maxClicks;
+export interface AutoclickerConfig {
+  clicks: ClickData[];
+  repeat: number;
+  speed: number;
+  randomize: boolean;
 }
-
-export function computeDelay(baseDelay: number, factor: number): number {
-  return baseDelay * (1 + Math.random() * factor);
+export function handleAutoclickerData(rawData: unknown): AutoclickerConfig | null {
+  if (!rawData || typeof rawData !== 'object') {
+    return null;
+  }
+  const data = rawData as Record<string, unknown>;
+  const clicks: ClickData[] = [];
+  if (Array.isArray(data.clicks)) {
+    for (const item of data.clicks) {
+      if (item && typeof item === 'object') {
+        const clickItem = item as Record<string, unknown>;
+        if (typeof clickItem.x === 'number' && typeof clickItem.y === 'number' &&
+            typeof clickItem.delay === 'number' && typeof clickItem.button === 'number') {
+          clicks.push({ position: { x: clickItem.x, y: clickItem.y }, delayMs: clickItem.delay, button: clickItem.button });
+        }
+      }
+    }
+  }
+  const repeat = typeof data.repeat === 'number' && data.repeat > 0 ? data.repeat : 1;
+  const speed = typeof data.speed === 'number' && data.speed > 0 ? data.speed : 100;
+  const randomize = typeof data.randomize === 'boolean' ? data.randomize : false;
+  if (clicks.length === 0) {
+    return null;
+  }
+  return { clicks, repeat, speed, randomize };
 }
-
-export function validateCoordinates(coords: Coordinates): boolean {
-  return coords.x > 0 && coords.y > 0;
+export function serializeAutoclickerData(config: AutoclickerConfig): string {
+  return JSON.stringify({ clicks: config.clicks.map(c => ({ x: c.position.x, y: c.position.y, delay: c.delayMs, button: c.button })), repeat: config.repeat, speed: config.speed, randomize: config.randomize });
 }
-
-export function buildClickPayload(coords: Coordinates, time: number): {x: number, y: number, t: number} {
-  return {x: coords.x, y: coords.y, t: time};
+export function deserializeAutoclickerData(json: string): AutoclickerConfig | null {
+  try {
+    const parsed = JSON.parse(json);
+    return handleAutoclickerData(parsed);
+  } catch (error) {
+    return null;
+  }
 }
-
-export function delayToInterval(delay: number): number {
-  return Math.floor(delay / 1000);
-}
-
-export function resetCounter(): number {
-  return 0;
-}
-
-export function incrementClick(count: number): number {
-  return count + 1;
-}
-
-export function isClickTime(currentTime: number, nextTime: number): boolean {
-  return currentTime >= nextTime;
-}
-
-export function calculateAverageDelay(delays: number[]): number {
-  if (delays.length === 0) return 0;
-  const sum = delays.reduce((a, b) => a + b, 0);
-  return sum / delays.length;
+export function adjustClickDelays(config: AutoclickerConfig, factor: number): AutoclickerConfig {
+  if (factor <= 0) {
+    return config;
+  }
+  return { ...config, clicks: config.clicks.map(click => ({ ...click, delayMs: Math.max(0, Math.floor(click.delayMs * factor)) })) };
 }
