@@ -1,45 +1,31 @@
 # dev-toolkit-53
 
-A powerful suite of developer tools written in TypeScript, aimed at enhancing productivity through automation and streamlined workflows. This toolkit simplifies common tasks and integrates seamlessly with existing applications, allowing developers to focus more on coding and less on repetitive tasks.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+dev-toolkit-53 is a lightweight TypeScript autoclicker designed for developers to handle automated mouse interactions. The tool focuses on precision and reliability for use in UI testing, script development, and workflow automation.
 
 ## Features
-- **Automated Code Formatting**: Enforce coding standards and maintain consistency across your TypeScript projects with a simple command.
-- **Task Runner Integration**: Easily automate builds, testing, and deployment processes using configurable scripts tailored to your project needs.
-- **Real-time Dependency Monitoring**: Keep track of library updates and potential vulnerabilities with an integrated dependency checker.
-- **Customizable CLI Tools**: Create and run custom commands directly from the terminal with user-friendly interfaces for quick access to repetitive tasks.
+
+- Sub-millisecond click interval control with drift compensation
+- Configurable click types including left-click, right-click, and double-click
+- Pattern-based execution using simple configuration files
+- Safe operation with maximum duration limits and instant abort via ESC key
 
 ## Installation
 
-To get started with `dev-toolkit-53`, simply clone the repository and install the necessary dependencies:
-
 ```bash
-git clone https://github.com/yourusername/dev-toolkit-53.git
+git clone https://github.com/Developer/dev-toolkit-53.git
 cd dev-toolkit-53
 npm install
+npm run build
 ```
 
-You can also install it globally using npm:
+## Usage
+
+Start autoclicking at 1 second intervals for 50 clicks:
 
 ```bash
-npm install -g dev-toolkit-53
+node dist/index.js --interval 1000 --limit 50
 ```
 
-## Basic Usage
-
-After installation, you can utilize the toolkit directly from the command line. For example, to format your TypeScript files, you can run:
-
-```bash
-dev-toolkit-53 format --src ./src/**/*.ts
-```
-
-To automate your project's build process, create a new task in your configuration file, and then run it with:
-
-```bash
-dev-toolkit-53 run build
-```
-
-## License
-
-![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)
-
-`dev-toolkit-53` is licensed under the MIT License. Feel free to use and contribute to the project!
+Modify behavior using command line flags or a `config.json` file.
