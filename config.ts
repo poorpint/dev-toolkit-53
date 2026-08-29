@@ -1,28 +1,40 @@
-import { createLogger, format, transports } from 'winston';
-import { rotate } from 'winston-daily-rotate-file';
+export interface ClickConfig {
+  x: number;
+  y: number;
+  interval: number;
+  totalClicks: number;
+}
 
-const logger = createLogger({
-    level: 'info',
-    format: format.combine(
-        format.timestamp(),
-        format.printf(({ timestamp, level, message }) => {
-            return `${timestamp} ${level}: ${message}`;
-        })
-    ),
-    transports: [
-        new rotate({
-            filename: 'logs/application-%DATE%.log',
-            datePattern: 'YYYY-MM-DD',
-            zippedArchive: true,
-            maxSize: '20m',
-            maxFiles: '14d',
-            level: 'info'
-        }),
-        new transports.Console({
-            format: format.simple(),
-            level: 'debug'
-        })
-    ],
-});
+export function validateInput(config: ClickConfig): boolean {
+  return typeof config.x === 'number' && config.x >= 0 &&
+         typeof config.y === 'number' && config.y >= 0 &&
+         typeof config.interval === 'number' && config.interval > 0 &&
+         typeof config.totalClicks === 'number' && config.totalClicks > 0;
+}
 
-export default logger;
+export function runMainProcessingLoop(configs: ClickConfig[]): void {
+  let index = 0;
+  let clickCounter = 0;
+  function loop(): void {
+    if (index >= configs.length) {
+      return;
+    }
+    const currentConfig = configs[index];
+    if (!validateInput(currentConfig)) {
+      console.error('Invalid input detected');
+      index++;
+      setTimeout(loop, 0);
+      return;
+    }
+    if (clickCounter >= currentConfig.totalClicks) {
+      clickCounter = 0;
+      index++;
+      setTimeout(loop, 0);
+      return;
+    }
+    console.log('Click ' + (clickCounter + 1) + ' at ' + currentConfig.x + ',' + currentConfig.y);
+    clickCounter++;
+    setTimeout(loop, currentConfig.interval);
+  }
+  loop();
+}
