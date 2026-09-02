@@ -1,35 +1,64 @@
-function debounce(fn: Function, delay: number) {
-    let timeoutId: NodeJS.Timeout | null;
-    return function (...args: any[]) {
-        if (timeoutId) {
-            clearTimeout(timeoutId);
-        }
-        timeoutId = setTimeout(() => fn(...args), delay);
-    };
+interface ClickPosition {
+  x: number;
+  y: number;
 }
 
-function throttle(fn: Function, limit: number) {
-    let lastFn: ReturnType<typeof setTimeout>;
-    let lastRan: number;
-    return function (...args: any[]) {
-        const context = this;
-        if (!lastRan) {
-            fn.apply(context, args);
-            lastRan = Date.now();
-        } else {
-            clearTimeout(lastFn);
-            lastFn = setTimeout(function () {
-                if ((Date.now() - lastRan) >= limit) {
-                    fn.apply(context, args);
-                    lastRan = Date.now();
-                }
-            }, limit - (Date.now() - lastRan));
-        }
-    };
+interface AutoclickerData {
+  positions: ClickPosition[];
+  interval: number;
+  count: number;
 }
 
-function getRandomInt(min: number, max: number): number {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+export function validateAutoclickerData(data: AutoclickerData): boolean {
+  if (!data || data.interval <= 0 || data.count <= 0) {
+    return false;
+  }
+  if (!data.positions || data.positions.length === 0) {
+    return false;
+  }
+  return data.positions.every((pos) => pos.x >= 0 && pos.y >= 0);
 }
 
-export { debounce, throttle, getRandomInt };
+export function normalizePositions(positions: ClickPosition[]): ClickPosition[] {
+  return positions.map((pos) => ({
+    x: Math.round(pos.x),
+    y: Math.round(pos.y),
+  }));
+}
+
+export function calculateTotalDuration(data: AutoclickerData): number {
+  return data.interval * data.count;
+}
+
+export function mergeClickData(base: AutoclickerData, additional: Partial<AutoclickerData>): AutoclickerData {
+  const mergedPositions = additional.positions
+    ? normalizePositions(additional.positions)
+    : base.positions;
+  return {
+    positions: mergedPositions,
+    interval: additional.interval ?? base.interval,
+    count: additional.count ?? base.count,
+  };
+}
+
+export function filterValidPositions(positions: ClickPosition[]): ClickPosition[] {
+  return positions.filter((pos) => pos.x >= 0 && pos.y >= 0);
+}
+
+export function generateClickSequence(
+  startX: number,
+  startY: number,
+  deltaX: number,
+  deltaY: number,
+  steps: number
+): ClickPosition[] {
+  const sequence: ClickPosition[] = [];
+  let currentX = startX;
+  let currentY = startY;
+  for (let i = 0; i < steps; i++) {
+    sequence.push({ x: currentX, y: currentY });
+    currentX += deltaX;
+    currentY += deltaY;
+  }
+  return sequence;
+}
