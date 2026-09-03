@@ -1,59 +1,33 @@
-export interface Target {
-  id: string;
-  element: HTMLElement;
-  intervalMs: number;
+export interface ClickConfig {
+  interval: number;
+  duration: number;
+  x: number;
+  y: number;
 }
 
-export class AutoClickerService {
-  private targets: Target[] = [];
-  private lastClick: Map<string, number> = new Map();
-  private timer: number | null = null;
-  private running: boolean = false;
+export const validateClickConfig = (config: any): config is ClickConfig => {
+  return (
+    typeof config.interval === 'number' && config.interval > 0 &&
+    typeof config.duration === 'number' && config.duration >= 0 &&
+    typeof config.x === 'number' && config.x >= 0 &&
+    typeof config.y === 'number' && config.y >= 0
+  );
+};
 
-  addTarget(target: Target): void {
-    this.targets.push(target);
-    this.lastClick.set(target.id, 0);
+export const processClickLoop = (config: unknown): void => {
+  if (!validateClickConfig(config)) {
+    throw new Error('invalid click configuration provided');
   }
 
-  start(): void {
-    if (this.running) {
+  const { interval, duration, x, y } = config;
+  let elapsed = 0;
+
+  const intervalId = setInterval(() => {
+    if (elapsed >= duration) {
+      clearInterval(intervalId);
       return;
     }
-    this.running = true;
-    this.scheduleTick();
-  }
-
-  private scheduleTick(): void {
-    if (!this.running) {
-      return;
-    }
-    this.timer = window.setTimeout(() => {
-      this.tick();
-      this.scheduleTick();
-    }, 5);
-  }
-
-  private tick(): void {
-    const now = Date.now();
-    this.targets.forEach((target) => {
-      const last = this.lastClick.get(target.id) || 0;
-      if (now - last >= target.intervalMs) {
-        target.element.click();
-        this.lastClick.set(target.id, now);
-      }
-    });
-  }
-
-  stop(): void {
-    this.running = false;
-    if (this.timer !== null) {
-      window.clearTimeout(this.timer);
-      this.timer = null;
-    }
-  }
-
-  removeTarget(id: string): void {
-    this.targets = this.targets.filter((t) => t.id !== id);
-    this.lastClick.delete(id);
-  }
-}
+    console.log(`clicking at ${x}, ${y}`);
+    elapsed += interval;
+  }, interval);
+};
