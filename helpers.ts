@@ -1,60 +1,59 @@
-/**
- * Calculates a randomized click delay in milliseconds based on clicks per second and jitter.
- *
- * @param cps - Target clicks per second.
- * @param jitterPercentage - Variance percentage (0 to 100) applied to the interval.
- * @returns Calculated delay in milliseconds.
- */
-export function calculateClickDelay(cps: number, jitterPercentage: number = 0): number {
-  if (cps <= 0) {
-    throw new Error('Clicks per second must be greater than zero.');
-  }
-  const baseDelayMs = 1000 / cps;
-  if (jitterPercentage <= 0) {
-    return Math.round(baseDelayMs);
-  }
-  const maxJitter = baseDelayMs * (Math.min(jitterPercentage, 100) / 100);
-  const randomOffset = (Math.random() * 2 - 1) * maxJitter;
-  return Math.max(1, Math.round(baseDelayMs + randomOffset));
+export interface ClickConfig {
+  intervalMs: number;
+  button: 'left' | 'right' | 'middle';
+  clickType: 'single' | 'double';
+  coordinates: { x: number; y: number } | null;
+  repeatCount: number;
 }
 
-/**
- * Clamps target screen coordinates within specified viewport boundaries.
- *
- * @param x - Horizontal coordinate.
- * @param y - Vertical coordinate.
- * @param bounds - Viewport dimension boundaries.
- * @returns A tuple containing clamped [x, y] coordinates.
- */
-export function clampCoordinates(
-  x: number,
-  y: number,
-  bounds: { width: number; height: number }
-): [number, number] {
-  const clampedX = Math.max(0, Math.min(x, bounds.width));
-  const clampedY = Math.max(0, Math.min(y, bounds.height));
-  return [clampedX, clampedY];
+export interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
 }
 
-/**
- * Formats a millisecond duration into a human-readable string.
- *
- * @param durationMs - Duration in milliseconds.
- * @returns Formatted time string (e.g., "1m 30s 500ms").
- */
-export function formatDuration(durationMs: number): string {
-  if (durationMs < 0) {
-    return '0ms';
+export function validateClickConfig(config: unknown): ValidationResult {
+  const errors: string[] = [];
+
+  if (!config || typeof config !== 'object') {
+    return { isValid: false, errors: ['Configuration must be a valid object'] };
   }
-  const ms = durationMs % 1000;
-  const totalSeconds = Math.floor(durationMs / 1000);
-  const seconds = totalSeconds % 60;
-  const minutes = Math.floor(totalSeconds / 60);
 
-  const parts: string[] = [];
-  if (minutes > 0) parts.push(`${minutes}m`);
-  if (seconds > 0) parts.push(`${seconds}s`);
-  if (ms > 0 || parts.length === 0) parts.push(`${ms}ms`);
+  const { intervalMs, button, clickType, coordinates, repeatCount } = config as Partial<ClickConfig>;
 
-  return parts.join(' ');
+  if (typeof intervalMs !== 'number' || intervalMs < 10 || !Number.isInteger(intervalMs)) {
+    errors.push('Interval must be an integer of at least 10ms');
+  }
+
+  const validButtons = ['left', 'right', 'middle'];
+  if (!button || !validButtons.includes(button)) {
+    errors.push("Button must be 'left', 'right', or 'middle'");
+  }
+
+  const validClickTypes = ['single', 'double'];
+  if (!clickType || !validClickTypes.includes(clickType)) {
+    errors.push("Click type must be 'single' or 'double'");
+  }
+
+  if (coordinates !== null && coordinates !== undefined) {
+    if (
+      typeof coordinates !== 'object' ||
+      typeof coordinates.x !== 'number' ||
+      typeof coordinates.y !== 'number' ||
+      coordinates.x < 0 ||
+      coordinates.y < 0 ||
+      !Number.isInteger(coordinates.x) ||
+      !Number.isInteger(coordinates.y)
+    ) {
+      errors.push('Coordinates must be an object with non-negative integers x and y');
+    }
+  }
+
+  if (typeof repeatCount !== 'number' || repeatCount < 0 || !Number.isInteger(repeatCount)) {
+    errors.push('Repeat count must be a non-negative integer');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
 }
