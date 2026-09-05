@@ -1,24 +1,22 @@
-export function validateInput(input: any): boolean {
-    if (typeof input !== 'number') return false;
-    if (input < 0) return false;
-    return true;
-}
+import { createLogger, format, transports, Logger } from 'winston';
+import 'winston-daily-rotate-file';
 
-export function processInput(input: any): string {
-    if (!validateInput(input)) {
-        throw new Error('Invalid input: must be a positive number.');
-    }
-    // Process the valid input
-    return `Processed: ${input}`;
-}
+const logFormat = format.combine(
+  format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+  format.printf(({ timestamp, level, message }) => `${timestamp} [${level.toUpperCase()}]: ${message}`)
+);
 
-export function mainLoop(inputs: any[]): void {
-    for (const input of inputs) {
-        try {
-            const result = processInput(input);
-            console.log(result);
-        } catch (error) {
-            console.error(error.message);
-        }
-    }
-}
+export const logger: Logger = createLogger({
+  level: 'info',
+  format: logFormat,
+  transports: [
+    new transports.Console(),
+    new (transports as any).DailyRotateFile({
+      filename: 'logs/autoclicker-%DATE%.log',
+      datePattern: 'YYYY-MM-DD',
+      zippedArchive: true,
+      maxSize: '20m',
+      maxFiles: '14d'
+    })
+  ]
+});
