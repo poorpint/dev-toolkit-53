@@ -1,33 +1,58 @@
-export interface ClickConfig {
-  interval: number;
-  duration: number;
-  x: number;
-  y: number;
+export interface RetryOptions {
+  maxRetries?: number;
+  delayMs?: number;
+  backoffFactor?: number;
 }
 
-export const validateClickConfig = (config: any): config is ClickConfig => {
-  return (
-    typeof config.interval === 'number' && config.interval > 0 &&
-    typeof config.duration === 'number' && config.duration >= 0 &&
-    typeof config.x === 'number' && config.x >= 0 &&
-    typeof config.y === 'number' && config.y >= 0
-  );
-};
-
-export const processClickLoop = (config: unknown): void => {
-  if (!validateClickConfig(config)) {
-    throw new Error('invalid click configuration provided');
+export class NetworkService {
+  private static async sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  const { interval, duration, x, y } = config;
-  let elapsed = 0;
+  public static async fetchWithRetry<T>(
+    fn: () => Promise<T>,
+    options: RetryOptions = {}
+  ): Promise<T> {
+    const { maxRetries = 3, delayMs = 500, backoffFactor = 2 } = options;
+    let currentDelay = delayMs;
+    let lastError: unknown;
 
-  const intervalId = setInterval(() => {
-    if (elapsed >= duration) {
-      clearInterval(intervalId);
-      return;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (error) {
+        lastError = error;
+        if (attempt === maxRetries) {
+          break;
+        }
+        await this.sleep(currentDelay);
+        currentDelay *= backoffFactor;
+      }
     }
-    console.log(`clicking at ${x}, ${y}`);
-    elapsed += interval;
-  }, interval);
-};
+
+    throw new Error(
+      `Network operation failed after ${maxRetries} attempts: ${
+        lastError instanceof Error ? lastError.message : String(lastError)
+      }`
+    );
+  }
+
+  public static async syncClickPresets(
+    endpoint: string,
+    payload: Record<string, unknown>
+  ): Promise<Response> {
+    return this.fetchWithRetry(async () => {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+      }
+
+      return response;
+    });
+  }
+}
