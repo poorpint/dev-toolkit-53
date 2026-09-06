@@ -1,40 +1,27 @@
-export interface ClickConfig {
-  x: number;
-  y: number;
+export interface Config {
   interval: number;
-  totalClicks: number;
+  clicks: number;
+  randomization: number;
 }
 
-export function validateInput(config: ClickConfig): boolean {
-  return typeof config.x === 'number' && config.x >= 0 &&
-         typeof config.y === 'number' && config.y >= 0 &&
-         typeof config.interval === 'number' && config.interval > 0 &&
-         typeof config.totalClicks === 'number' && config.totalClicks > 0;
-}
+const defaults: Config = {
+  interval: 100,
+  clicks: 1000,
+  randomization: 0,
+};
 
-export function runMainProcessingLoop(configs: ClickConfig[]): void {
-  let index = 0;
-  let clickCounter = 0;
-  function loop(): void {
-    if (index >= configs.length) {
-      return;
-    }
-    const currentConfig = configs[index];
-    if (!validateInput(currentConfig)) {
-      console.error('Invalid input detected');
-      index++;
-      setTimeout(loop, 0);
-      return;
-    }
-    if (clickCounter >= currentConfig.totalClicks) {
-      clickCounter = 0;
-      index++;
-      setTimeout(loop, 0);
-      return;
-    }
-    console.log('Click ' + (clickCounter + 1) + ' at ' + currentConfig.x + ',' + currentConfig.y);
-    clickCounter++;
-    setTimeout(loop, currentConfig.interval);
+export const loadConfig = (input: Partial<Config> = {}): Config => {
+  return {
+    ...defaults,
+    ...input,
+  };
+};
+
+export const validateConfig = (config: Config): void => {
+  if (config.interval < 1) {
+    throw new Error('interval must be positive');
   }
-  loop();
-}
+  if (config.clicks < 0) {
+    throw new Error('clicks cannot be negative');
+  }
+};
