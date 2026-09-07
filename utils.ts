@@ -1,22 +1,26 @@
-import { createLogger, format, transports, Logger } from 'winston';
-import 'winston-daily-rotate-file';
+export interface ClickConfig {
+  delay: number;
+  button: 'left' | 'right' | 'middle';
+  iterations: number;
+}
 
-const logFormat = format.combine(
-  format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-  format.printf(({ timestamp, level, message }) => `${timestamp} [${level.toUpperCase()}]: ${message}`)
-);
+export interface ClickState {
+  isActive: boolean;
+  elapsed: number;
+}
 
-export const logger: Logger = createLogger({
-  level: 'info',
-  format: logFormat,
-  transports: [
-    new transports.Console(),
-    new (transports as any).DailyRotateFile({
-      filename: 'logs/autoclicker-%DATE%.log',
-      datePattern: 'YYYY-MM-DD',
-      zippedArchive: true,
-      maxSize: '20m',
-      maxFiles: '14d'
-    })
-  ]
+export const validateConfig = (config: ClickConfig): boolean => {
+  return config.delay >= 0 && config.iterations >= -1;
+};
+
+export const formatDuration = (ms: number): string => {
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes.toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
+};
+
+export const createDefaultConfig = (): ClickConfig => ({
+  delay: 100,
+  button: 'left',
+  iterations: -1
 });
