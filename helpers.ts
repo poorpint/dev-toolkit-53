@@ -1,29 +1,34 @@
-export interface Position {
+export interface Point {
   x: number;
   y: number;
 }
 
-export const sleep = (ms: number): Promise<void> => {
+export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
-};
+}
 
-export const getRandomDelay = (baseDelay: number, variance: number): number => {
-  const min = Math.max(0, baseDelay - variance);
-  const max = baseDelay + variance;
-  return Math.floor(Math.random() * (max - min + 1) + min);
-};
+export function getRandomDelay(minMs: number, maxMs: number): number {
+  const min = Math.min(minMs, maxMs);
+  const max = Math.max(minMs, maxMs);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
-export const getJitteredPosition = (pos: Position, maxRadius: number): Position => {
-  if (maxRadius <= 0) return { ...pos };
+export function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+export function applyJitter(point: Point, maxRadius: number): Point {
+  if (maxRadius <= 0) return { ...point };
   const angle = Math.random() * 2 * Math.PI;
   const radius = Math.random() * maxRadius;
   return {
-    x: Math.round(pos.x + radius * Math.cos(angle)),
-    y: Math.round(pos.y + radius * Math.sin(angle))
+    x: Math.round(point.x + radius * Math.cos(angle)),
+    y: Math.round(point.y + radius * Math.sin(angle))
   };
-};
+}
 
-export const calculateClicksPerSecond = (intervalMs: number): number => {
-  if (intervalMs <= 0) return 0;
-  return parseFloat((1000 / intervalMs).toFixed(2));
-};
+export function calculateCPS(clickCount: number, durationMs: number): number {
+  if (durationMs <= 0) return 0;
+  const cps = (clickCount / durationMs) * 1000;
+  return Math.round(cps * 10) / 10;
+}
