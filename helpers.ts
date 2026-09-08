@@ -1,34 +1,32 @@
-export interface Point {
-  x: number;
-  y: number;
+export interface ClickConfig {
+  interval: number;
+  button: 'left' | 'right' | 'middle';
+  repeat: number;
 }
 
-export function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+export const validateClickConfig = (config: unknown): config is ClickConfig => {
+  if (typeof config !== 'object' || config === null) return false;
+  const { interval, button, repeat } = config as ClickConfig;
+  return (
+    typeof interval === 'number' && interval > 0 &&
+    ['left', 'right', 'middle'].includes(button) &&
+    typeof repeat === 'number' && repeat >= -1
+  );
+};
 
-export function getRandomDelay(minMs: number, maxMs: number): number {
-  const min = Math.min(minMs, maxMs);
-  const max = Math.max(minMs, maxMs);
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+export const serializeConfig = (config: ClickConfig): string => {
+  return JSON.stringify(config);
+};
 
-export function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
+export const deserializeConfig = (data: string): ClickConfig | null => {
+  try {
+    const parsed = JSON.parse(data);
+    return validateClickConfig(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+};
 
-export function applyJitter(point: Point, maxRadius: number): Point {
-  if (maxRadius <= 0) return { ...point };
-  const angle = Math.random() * 2 * Math.PI;
-  const radius = Math.random() * maxRadius;
-  return {
-    x: Math.round(point.x + radius * Math.cos(angle)),
-    y: Math.round(point.y + radius * Math.sin(angle))
-  };
-}
-
-export function calculateCPS(clickCount: number, durationMs: number): number {
-  if (durationMs <= 0) return 0;
-  const cps = (clickCount / durationMs) * 1000;
-  return Math.round(cps * 10) / 10;
-}
+export const calculateTotalDelay = (config: ClickConfig): number => {
+  return config.interval * (config.repeat === -1 ? 1 : config.repeat);
+};
