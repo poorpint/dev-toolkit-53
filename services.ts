@@ -1,29 +1,27 @@
-export const delay = (ms: number): Promise<void> => 
-  new Promise((resolve) => setTimeout(resolve, ms));
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  retries: number = 3,
+  delay: number = 1000
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    if (retries <= 0) throw error;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    return withRetry(fn, retries - 1, delay);
+  }
+}
 
-export const getRandomInt = (min: number, max: number): number => 
-  Math.floor(Math.random() * (max - min + 1)) + min;
-
-export const getCoordinates = (element: HTMLElement): { x: number; y: number } => {
-  const rect = element.getBoundingClientRect();
-  return {
-    x: rect.left + rect.width / 2,
-    y: rect.top + rect.height / 2
-  };
-};
-
-export const triggerClick = (x: number, y: number): void => {
-  const event = new MouseEvent('click', {
-    view: window,
-    bubbles: true,
-    cancelable: true,
-    clientX: x,
-    clientY: y
-  });
-  document.elementFromPoint(x, y)?.dispatchEvent(event);
-};
-
-export const isElementVisible = (element: HTMLElement): boolean => {
-  const style = window.getComputedStyle(element);
-  return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+export const fetchWithRetry = async <T>(
+  url: string,
+  options: RequestInit = {},
+  retries: number = 3
+): Promise<T> => {
+  return withRetry(async () => {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  }, retries);
 };
