@@ -1,32 +1,23 @@
-export interface ClickConfig {
-  interval: number;
-  button: 'left' | 'right' | 'middle';
-  repeat: number;
-}
+export const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
-export const validateClickConfig = (config: unknown): config is ClickConfig => {
-  if (typeof config !== 'object' || config === null) return false;
-  const { interval, button, repeat } = config as ClickConfig;
-  return (
-    typeof interval === 'number' && interval > 0 &&
-    ['left', 'right', 'middle'].includes(button) &&
-    typeof repeat === 'number' && repeat >= -1
-  );
+export const getRandomInt = (min: number, max: number): number => {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
-export const serializeConfig = (config: ClickConfig): string => {
-  return JSON.stringify(config);
+export const clamp = (value: number, min: number, max: number): number => {
+  return Math.min(Math.max(value, min), max);
 };
 
-export const deserializeConfig = (data: string): ClickConfig | null => {
-  try {
-    const parsed = JSON.parse(data);
-    return validateClickConfig(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
+export const generateClickJitter = (base: number, variation: number): number => {
+  return base + (Math.random() * 2 - 1) * variation;
 };
 
-export const calculateTotalDelay = (config: ClickConfig): number => {
-  return config.interval * (config.repeat === -1 ? 1 : config.repeat);
+export const isWithinBounds = (x: number, y: number, width: number, height: number): boolean => {
+  return x >= 0 && x <= width && y >= 0 && y <= height;
+};
+
+export type Point = { x: number; y: number };
+
+export const formatTimestamp = (): string => {
+  return new Date().toISOString();
 };
