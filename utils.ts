@@ -1,36 +1,31 @@
 export interface ClickConfig {
-  delay: number;
+  interval: number;
   button: 'left' | 'right' | 'middle';
-  iterations: number | null;
+  iterations: number;
+  jitter: number;
 }
 
-export const validateClickConfig = (config: unknown): config is ClickConfig => {
-  if (typeof config !== 'object' || config === null) return false;
-  const { delay, button, iterations } = config as any;
-  return (
-    typeof delay === 'number' &&
-    delay >= 0 &&
-    ['left', 'right', 'middle'].includes(button) &&
-    (iterations === null || (typeof iterations === 'number' && iterations > 0))
-  );
+export interface ClickState {
+  isActive: boolean;
+  count: number;
+  lastClick: number;
+}
+
+export const validateConfig = (config: Partial<ClickConfig>): ClickConfig => {
+  return {
+    interval: Math.max(10, config.interval ?? 100),
+    button: config.button ?? 'left',
+    iterations: Math.max(0, config.iterations ?? 0),
+    jitter: Math.max(0, Math.min(100, config.jitter ?? 0)),
+  };
 };
 
-export const serializeConfig = (config: ClickConfig): string => JSON.stringify(config);
-
-export const deserializeConfig = (data: string): ClickConfig | null => {
-  try {
-    const parsed = JSON.parse(data);
-    return validateClickConfig(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
+export const calculateNextDelay = (base: number, jitter: number): number => {
+  if (jitter <= 0) return base;
+  const variance = base * (jitter / 100);
+  return base + (Math.random() * 2 * variance - variance);
 };
 
-export const calculateInterval = (delay: number, jitter: number = 0): number => {
-  const drift = Math.random() * jitter;
-  return Math.max(0, delay + (Math.random() > 0.5 ? drift : -drift));
-};
-
-export const formatTimestamp = (date: Date): string => {
-  return date.toISOString().replace('T', ' ').slice(0, 19);
+export const formatClickRate = (interval: number): string => {
+  return `${(1000 / interval).toFixed(2)} clicks/sec`;
 };
