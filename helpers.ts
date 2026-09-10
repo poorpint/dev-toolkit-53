@@ -1,33 +1,43 @@
-import * as fs from 'fs';
-import * as path from 'path';
-
-interface LoggerConfig {
-  logDir: string;
-  maxSizeMB: number;
+export interface ClickConfig {
+  interval: number;
+  button: 'left' | 'right' | 'middle';
+  iterations: number;
 }
 
-export class Logger {
-  private logFile: string;
-  private config: LoggerConfig;
-
-  constructor(config: LoggerConfig) {
-    this.config = config;
-    if (!fs.existsSync(config.logDir)) fs.mkdirSync(config.logDir);
-    this.logFile = path.join(config.logDir, 'app.log');
-  }
-
-  public log(message: string): void {
-    this.rotate();
-    const entry = `[${new Date().toISOString()}] ${message}\n`;
-    fs.appendFileSync(this.logFile, entry);
-  }
-
-  private rotate(): void {
-    if (!fs.existsSync(this.logFile)) return;
-    const stats = fs.statSync(this.logFile);
-    if (stats.size > this.config.maxSizeMB * 1024 * 1024) {
-      const timestamp = Date.now();
-      fs.renameSync(this.logFile, `${this.logFile}.${timestamp}.old`);
-    }
-  }
+export interface Coordinates {
+  x: number;
+  y: number;
 }
+
+/**
+ * Delays execution for a specified duration in milliseconds.
+ */
+export const sleep = (ms: number): Promise<void> => 
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Validates click coordinates against screen boundaries.
+ */
+export const isWithinBounds = (
+  pos: Coordinates, 
+  width: number, 
+  height: number
+): boolean => {
+  return pos.x >= 0 && pos.x <= width && pos.y >= 0 && pos.y <= height;
+};
+
+/**
+ * Calculates the dynamic interval based on jitter factor.
+ */
+export const calculateJitter = (base: number, factor: number): number => {
+  const variance = base * factor;
+  return base + (Math.random() * 2 * variance - variance);
+};
+
+/**
+ * Formats click statistics for logging output.
+ */
+export const formatStats = (count: number, duration: number): string => {
+  const rate = (count / (duration / 1000)).toFixed(2);
+  return `clicks: ${count}, rate: ${rate} cps`;
+};
