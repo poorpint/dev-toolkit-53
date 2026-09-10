@@ -1,23 +1,33 @@
-export const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+import * as fs from 'fs';
+import * as path from 'path';
 
-export const getRandomInt = (min: number, max: number): number => {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-};
+interface LoggerConfig {
+  logDir: string;
+  maxSizeMB: number;
+}
 
-export const clamp = (value: number, min: number, max: number): number => {
-  return Math.min(Math.max(value, min), max);
-};
+export class Logger {
+  private logFile: string;
+  private config: LoggerConfig;
 
-export const generateClickJitter = (base: number, variation: number): number => {
-  return base + (Math.random() * 2 - 1) * variation;
-};
+  constructor(config: LoggerConfig) {
+    this.config = config;
+    if (!fs.existsSync(config.logDir)) fs.mkdirSync(config.logDir);
+    this.logFile = path.join(config.logDir, 'app.log');
+  }
 
-export const isWithinBounds = (x: number, y: number, width: number, height: number): boolean => {
-  return x >= 0 && x <= width && y >= 0 && y <= height;
-};
+  public log(message: string): void {
+    this.rotate();
+    const entry = `[${new Date().toISOString()}] ${message}\n`;
+    fs.appendFileSync(this.logFile, entry);
+  }
 
-export type Point = { x: number; y: number };
-
-export const formatTimestamp = (): string => {
-  return new Date().toISOString();
-};
+  private rotate(): void {
+    if (!fs.existsSync(this.logFile)) return;
+    const stats = fs.statSync(this.logFile);
+    if (stats.size > this.config.maxSizeMB * 1024 * 1024) {
+      const timestamp = Date.now();
+      fs.renameSync(this.logFile, `${this.logFile}.${timestamp}.old`);
+    }
+  }
+}
