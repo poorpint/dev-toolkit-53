@@ -1,43 +1,40 @@
-export interface ClickConfig {
-  interval: number;
-  button: 'left' | 'right' | 'middle';
-  iterations: number;
-}
-
-export interface Coordinates {
+export interface Point {
   x: number;
   y: number;
 }
 
-/**
- * Delays execution for a specified duration in milliseconds.
- */
-export const sleep = (ms: number): Promise<void> => 
-  new Promise((resolve) => setTimeout(resolve, ms));
+export function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
-/**
- * Validates click coordinates against screen boundaries.
- */
-export const isWithinBounds = (
-  pos: Coordinates, 
-  width: number, 
-  height: number
-): boolean => {
-  return pos.x >= 0 && pos.x <= width && pos.y >= 0 && pos.y <= height;
-};
+export function getRandomDelay(baseDelay: number, variance: number): number {
+  const min = Math.max(0, baseDelay - variance);
+  const max = baseDelay + variance;
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
-/**
- * Calculates the dynamic interval based on jitter factor.
- */
-export const calculateJitter = (base: number, factor: number): number => {
-  const variance = base * factor;
-  return base + (Math.random() * 2 * variance - variance);
-};
+export function applyJitter(point: Point, maxJitter: number): Point {
+  if (maxJitter <= 0) return { ...point };
+  const dx = Math.floor(Math.random() * (maxJitter * 2 + 1)) - maxJitter;
+  const dy = Math.floor(Math.random() * (maxJitter * 2 + 1)) - maxJitter;
+  return {
+    x: point.x + dx,
+    y: point.y + dy
+  };
+}
 
-/**
- * Formats click statistics for logging output.
- */
-export const formatStats = (count: number, duration: number): string => {
-  const rate = (count / (duration / 1000)).toFixed(2);
-  return `clicks: ${count}, rate: ${rate} cps`;
-};
+export function generateClickSequence(
+  target: Point,
+  clicks: number,
+  interval: number,
+  jitter: number
+): Array<{ point: Point; delay: number }> {
+  const sequence = [];
+  for (let i = 0; i < clicks; i++) {
+    sequence.push({
+      point: applyJitter(target, jitter),
+      delay: getRandomDelay(interval, interval * 0.15)
+    });
+  }
+  return sequence;
+}
