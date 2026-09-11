@@ -1,40 +1,47 @@
-export interface Point {
-  x: number;
-  y: number;
+export interface ClickConfig {
+  interval: number;
+  clicks: number;
+  button: 'left' | 'right' | 'middle';
+  coordinates?: { x: number; y: number };
 }
 
-export function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-export function getRandomDelay(baseDelay: number, variance: number): number {
-  const min = Math.max(0, baseDelay - variance);
-  const max = baseDelay + variance;
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-export function applyJitter(point: Point, maxJitter: number): Point {
-  if (maxJitter <= 0) return { ...point };
-  const dx = Math.floor(Math.random() * (maxJitter * 2 + 1)) - maxJitter;
-  const dy = Math.floor(Math.random() * (maxJitter * 2 + 1)) - maxJitter;
-  return {
-    x: point.x + dx,
-    y: point.y + dy
-  };
-}
-
-export function generateClickSequence(
-  target: Point,
-  clicks: number,
-  interval: number,
-  jitter: number
-): Array<{ point: Point; delay: number }> {
-  const sequence = [];
-  for (let i = 0; i < clicks; i++) {
-    sequence.push({
-      point: applyJitter(target, jitter),
-      delay: getRandomDelay(interval, interval * 0.15)
-    });
+export function validateClickConfig(config: unknown): ClickConfig {
+  if (!config || typeof config !== 'object') {
+    throw new Error('Configuration must be an object');
   }
-  return sequence;
+
+  const { interval, clicks, button, coordinates } = config as Partial<ClickConfig>;
+
+  if (typeof interval !== 'number' || interval < 10) {
+    throw new Error('Interval must be at least 10ms');
+  }
+
+  if (typeof clicks !== 'number' || clicks < 0 || !Number.isInteger(clicks)) {
+    throw new Error('Clicks must be a non-negative integer');
+  }
+
+  const validButtons = ['left', 'right', 'middle'];
+  if (typeof button !== 'string' || !validButtons.includes(button)) {
+    throw new Error("Button must be 'left', 'right', or 'middle'");
+  }
+
+  if (coordinates !== undefined) {
+    if (
+      typeof coordinates !== 'object' ||
+      coordinates === null ||
+      typeof coordinates.x !== 'number' ||
+      typeof coordinates.y !== 'number' ||
+      coordinates.x < 0 ||
+      coordinates.y < 0
+    ) {
+      throw new Error('Coordinates must be valid non-negative coordinates');
+    }
+  }
+
+  return {
+    interval,
+    clicks,
+    button,
+    coordinates: coordinates ? { x: coordinates.x, y: coordinates.y } : undefined
+  };
 }
