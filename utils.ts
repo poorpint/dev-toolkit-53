@@ -2,30 +2,39 @@ export interface ClickConfig {
   interval: number;
   button: 'left' | 'right' | 'middle';
   iterations: number;
-  jitter: number;
 }
 
-export interface ClickState {
-  isActive: boolean;
-  count: number;
-  lastClick: number;
+export interface ClickResult {
+  success: boolean;
+  timestamp: number;
+  error?: string;
 }
 
-export const validateConfig = (config: Partial<ClickConfig>): ClickConfig => {
-  return {
-    interval: Math.max(10, config.interval ?? 100),
-    button: config.button ?? 'left',
-    iterations: Math.max(0, config.iterations ?? 0),
-    jitter: Math.max(0, Math.min(100, config.jitter ?? 0)),
-  };
+/**
+ * Delays execution for a specified duration
+ */
+export const sleep = (ms: number): Promise<void> => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
-export const calculateNextDelay = (base: number, jitter: number): number => {
-  if (jitter <= 0) return base;
-  const variance = base * (jitter / 100);
-  return base + (Math.random() * 2 * variance - variance);
+/**
+ * Validates click configuration parameters
+ */
+export const validateConfig = (config: ClickConfig): boolean => {
+  return config.interval > 0 && config.iterations >= 0;
 };
 
-export const formatClickRate = (interval: number): string => {
-  return `${(1000 / interval).toFixed(2)} clicks/sec`;
+/**
+ * Formats timestamp into human-readable string
+ */
+export const formatTimestamp = (date: Date): string => {
+  return date.toISOString().replace('T', ' ').substring(0, 19);
+};
+
+/**
+ * Generates jitter for click intervals
+ */
+export const applyJitter = (base: number, factor: number = 0.1): number => {
+  const jitter = base * factor;
+  return base + (Math.random() * 2 - 1) * jitter;
 };
