@@ -1,47 +1,30 @@
-export interface ClickConfig {
-  interval: number;
-  clicks: number;
-  button: 'left' | 'right' | 'middle';
-  coordinates?: { x: number; y: number };
-}
-
-export function validateClickConfig(config: unknown): ClickConfig {
-  if (!config || typeof config !== 'object') {
-    throw new Error('Configuration must be an object');
-  }
-
-  const { interval, clicks, button, coordinates } = config as Partial<ClickConfig>;
-
-  if (typeof interval !== 'number' || interval < 10) {
-    throw new Error('Interval must be at least 10ms');
-  }
-
-  if (typeof clicks !== 'number' || clicks < 0 || !Number.isInteger(clicks)) {
-    throw new Error('Clicks must be a non-negative integer');
-  }
-
-  const validButtons = ['left', 'right', 'middle'];
-  if (typeof button !== 'string' || !validButtons.includes(button)) {
-    throw new Error("Button must be 'left', 'right', or 'middle'");
-  }
-
-  if (coordinates !== undefined) {
-    if (
-      typeof coordinates !== 'object' ||
-      coordinates === null ||
-      typeof coordinates.x !== 'number' ||
-      typeof coordinates.y !== 'number' ||
-      coordinates.x < 0 ||
-      coordinates.y < 0
-    ) {
-      throw new Error('Coordinates must be valid non-negative coordinates');
+export const throttledClick = (fn: () => void, interval: number) => {
+  let lastExecution = 0;
+  return () => {
+    const now = performance.now();
+    if (now - lastExecution >= interval) {
+      lastExecution = now;
+      fn();
     }
-  }
-
-  return {
-    interval,
-    clicks,
-    button,
-    coordinates: coordinates ? { x: coordinates.x, y: coordinates.y } : undefined
   };
-}
+};
+
+export const batchExecute = <T>(tasks: (() => T)[], batchSize: number): T[] => {
+  const results: T[] = [];
+  for (let i = 0; i < tasks.length; i += batchSize) {
+    const batch = tasks.slice(i, i + batchSize);
+    results.push(...batch.map((task) => task()));
+  }
+  return results;
+};
+
+export const memoizeClickState = <T>(fn: (state: T) => void) => {
+  let lastState: T | null = null;
+  return (state: T) => {
+    if (JSON.stringify(state) === JSON.stringify(lastState)) return;
+    lastState = state;
+    fn(state);
+  };
+};
+
+export const getPerformanceMarker = () => performance.now();
