@@ -1,49 +1,39 @@
-export interface RetryOptions {
-  retries: number;
-  delay: number;
-  backoffFactor?: number;
-  shouldRetry?: (error: any) => boolean;
+export interface ClickEvent {
+  x: number;
+  y: number;
+  interval: number;
 }
 
-export async function retry<T>(
-  fn: () => Promise<T>,
-  options: RetryOptions = { retries: 3, delay: 1000, backoffFactor: 2 }
-): Promise<T> {
-  const { retries, delay, backoffFactor = 1, shouldRetry } = options;
-  let currentDelay = delay;
+export class AutoClickerService {
+  private intervalId: NodeJS.Timeout | null = null;
+  private active: boolean = false;
 
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      return await fn();
-    } catch (error) {
-      const isLastAttempt = attempt === retries;
-      const userShouldRetry = shouldRetry ? shouldRetry(error) : true;
+  constructor(private config: ClickEvent) {}
 
-      if (isLastAttempt || !userShouldRetry) {
-        throw error;
-      }
+  public toggle(): void {
+    this.active = !this.active;
+    this.active ? this.start() : this.stop();
+  }
 
-      await new Promise((resolve) => setTimeout(resolve, currentDelay));
-      currentDelay *= backoffFactor;
+  private start(): void {
+    this.intervalId = setInterval(() => {
+      this.executeClick();
+    }, this.config.interval);
+  }
+
+  private stop(): void {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
     }
   }
-  throw new Error("Retry limit exceeded");
-}
 
-export async function sendTelemetry(url: string, data: Record<string, unknown>): Promise<Response> {
-  return retry(
-    async () => {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+  private executeClick(): void {
+    const { x, y } = this.config;
+    process.stdout.write(`Click event at (${x}, ${y})\n`);
+  }
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      return response;
-    },
-    { retries: 5, delay: 500, backoffFactor: 1.5 }
-  );
+  public isActive(): boolean {
+    return this.active;
+  }
 }
