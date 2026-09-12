@@ -1,38 +1,35 @@
-export interface ClickerConfig {
+export interface ClickConfig {
   interval: number;
-  maxClicks: number;
+  button: 'left' | 'right' | 'middle';
+  iterations: number | null;
+  randomization: number;
 }
 
-export class ConfigManager {
-  private static readonly MIN_INTERVAL = 10;
-  private static readonly MAX_CLICKS_LIMIT = 1000000;
+export const DEFAULT_CONFIG: ClickConfig = {
+  interval: 100,
+  button: 'left',
+  iterations: null,
+  randomization: 0,
+};
 
-  public static validate(config: ClickerConfig): void {
-    if (typeof config.interval !== 'number' || config.interval < this.MIN_INTERVAL) {
-      throw new Error(`interval must be at least ${this.MIN_INTERVAL}ms`);
-    }
+export const validateConfig = (config: Partial<ClickConfig>): ClickConfig => {
+  return {
+    ...DEFAULT_CONFIG,
+    ...config,
+    interval: Math.max(1, config.interval || DEFAULT_CONFIG.interval),
+  };
+};
 
-    if (!Number.isInteger(config.maxClicks) || config.maxClicks <= 0) {
-      throw new Error('maxClicks must be a positive integer');
-    }
-
-    if (config.maxClicks > this.MAX_CLICKS_LIMIT) {
-      throw new Error(`maxClicks exceeds limit of ${this.MAX_CLICKS_LIMIT}`);
-    }
+export const loadConfig = (key: string): ClickConfig => {
+  const raw = localStorage.getItem(key);
+  if (!raw) return DEFAULT_CONFIG;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return DEFAULT_CONFIG;
   }
+};
 
-  public static sanitize(config: unknown): ClickerConfig {
-    if (typeof config !== 'object' || config === null) {
-      throw new Error('invalid configuration object');
-    }
-
-    const c = config as Record<string, unknown>;
-    const validated: ClickerConfig = {
-      interval: Number(c.interval),
-      maxClicks: Number(c.maxClicks)
-    };
-
-    this.validate(validated);
-    return validated;
-  }
-}
+export const saveConfig = (key: string, config: ClickConfig): void => {
+  localStorage.setItem(key, JSON.stringify(config));
+};
