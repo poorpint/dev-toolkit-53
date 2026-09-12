@@ -1,59 +1,49 @@
-import * as fs from 'fs';
-import * as path from 'path';
-
-export interface LoggerOptions {
-  logDir: string;
-  maxFileSizeByte: number;
-  maxFiles: number;
+export interface RetryOptions {
+  retries: number;
+  delay: number;
+  backoffFactor?: number;
+  shouldRetry?: (error: any) => boolean;
 }
 
-export class LoggerService {
-  private logDir: string;
-  private maxFileSize: number;
-  private maxFiles: number;
-  private currentFile: string;
+export async function retry<T>(
+  fn: () => Promise<T>,
+  options: RetryOptions = { retries: 3, delay: 1000, backoffFactor: 2 }
+): Promise<T> {
+  const { retries, delay, backoffFactor = 1, shouldRetry } = options;
+  let currentDelay = delay;
 
-  constructor(options: LoggerOptions) {
-    this.logDir = options.logDir;
-    this.maxFileSize = options.maxFileSizeByte;
-    this.maxFiles = options.maxFiles;
-    this.currentFile = path.join(this.logDir, 'autoclicker.log');
-    this.ensureDirectory();
-  }
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      const isLastAttempt = attempt === retries;
+      const userShouldRetry = shouldRetry ? shouldRetry(error) : true;
 
-  private ensureDirectory(): void {
-    if (!fs.existsSync(this.logDir)) {
-      fs.mkdirSync(this.logDir, { recursive: true });
-    }
-  }
-
-  private rotate(): void {
-    if (!fs.existsSync(this.currentFile)) return;
-    const stats = fs.statSync(this.currentFile);
-    if (stats.size < this.maxFileSize) return;
-
-    for (let i = this.maxFiles - 1; i >= 1; i--) {
-      const oldPath = path.join(this.logDir, `autoclicker.${i}.log`);
-      const newPath = path.join(this.logDir, `autoclicker.${i + 1}.log`);
-      if (fs.existsSync(oldPath)) {
-        if (i + 1 > this.maxFiles) {
-          fs.unlinkSync(oldPath);
-        } else {
-          fs.renameSync(oldPath, newPath);
-        }
+      if (isLastAttempt || !userShouldRetry) {
+        throw error;
       }
+
+      await new Promise((resolve) => setTimeout(resolve, currentDelay));
+      currentDelay *= backoffFactor;
     }
-    fs.renameSync(this.currentFile, path.join(this.logDir, 'autoclicker.1.log'));
   }
+  throw new Error("Retry limit exceeded");
+}
 
-  public log(message: string, level: 'INFO' | 'WARN' | 'ERROR' = 'INFO'): void {
-    this.rotate();
-    const timestamp = new Date().toISOString();
-    const formatted = `[${timestamp}] [${level}] ${message}\n`;
-    fs.appendFileSync(this.currentFile, formatted, 'utf-utf8');
-  }
+export async function sendTelemetry(url: string, data: Record<string, unknown>): Promise<Response> {
+  return retry(
+    async () => {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
 
-  public logClick(x: number, y: number, intervalMs: number): void {
-    this.log(`Click triggered at (${x}, ${y}) with interval ${intervalMs}ms`, 'INFO');
-  }
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response;
+    },
+    { retries: 5, delay: 500, backoffFactor: 1.5 }
+  );
 }
