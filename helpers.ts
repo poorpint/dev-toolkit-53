@@ -1,30 +1,35 @@
-export const throttledClick = (fn: () => void, interval: number) => {
-  let lastExecution = 0;
-  return () => {
-    const now = performance.now();
-    if (now - lastExecution >= interval) {
-      lastExecution = now;
-      fn();
+export const getTimestamp = (): number => performance.now();
+
+export const throttle = <T extends (...args: any[]) => void>(fn: T, limit: number) => {
+  let lastCall = 0;
+  return (...args: Parameters<T>) => {
+    const now = getTimestamp();
+    if (now - lastCall >= limit) {
+      lastCall = now;
+      fn(...args);
     }
   };
 };
 
-export const batchExecute = <T>(tasks: (() => T)[], batchSize: number): T[] => {
-  const results: T[] = [];
-  for (let i = 0; i < tasks.length; i += batchSize) {
-    const batch = tasks.slice(i, i + batchSize);
-    results.push(...batch.map((task) => task()));
+export const batchProcess = <T>(items: T[], chunkSize: number, callback: (batch: T[]) => void): void => {
+  for (let i = 0; i < items.length; i += chunkSize) {
+    callback(items.slice(i, i + chunkSize));
   }
-  return results;
 };
 
-export const memoizeClickState = <T>(fn: (state: T) => void) => {
-  let lastState: T | null = null;
-  return (state: T) => {
-    if (JSON.stringify(state) === JSON.stringify(lastState)) return;
-    lastState = state;
-    fn(state);
-  };
+export const memoize = <T extends (...args: any[]) => any>(fn: T): T => {
+  const cache = new Map<string, ReturnType<T>>();
+  return ((...args: Parameters<T>) => {
+    const key = JSON.stringify(args);
+    if (cache.has(key)) return cache.get(key);
+    const result = fn(...args);
+    cache.set(key, result);
+    return result;
+  }) as T;
 };
 
-export const getPerformanceMarker = () => performance.now();
+export const requestIdleCallbackPolyfill = (cb: IdleRequestCallback): number => {
+  return typeof requestIdleCallback !== 'undefined' 
+    ? requestIdleCallback(cb) 
+    : setTimeout(() => cb({ didTimeout: false, timeRemaining: () => 1 }), 1) as any;
+};
