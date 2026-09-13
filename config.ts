@@ -1,35 +1,21 @@
-export interface ClickConfig {
+export interface AppConfig {
   interval: number;
-  button: 'left' | 'right' | 'middle';
-  iterations: number | null;
-  randomization: number;
+  clicksPerSecond: number;
+  autoStart: boolean;
 }
 
-export const DEFAULT_CONFIG: ClickConfig = {
+const DEFAULT_CONFIG: AppConfig = {
   interval: 100,
-  button: 'left',
-  iterations: null,
-  randomization: 0,
+  clicksPerSecond: 10,
+  autoStart: false,
 };
 
-export const validateConfig = (config: Partial<ClickConfig>): ClickConfig => {
-  return {
-    ...DEFAULT_CONFIG,
-    ...config,
-    interval: Math.max(1, config.interval || DEFAULT_CONFIG.interval),
-  };
+export const loadConfig = (overrides: Partial<AppConfig> = {}): AppConfig => {
+  const stored = localStorage.getItem('dt53_config');
+  const parsed = stored ? JSON.parse(stored) : {};
+  return { ...DEFAULT_CONFIG, ...parsed, ...overrides };
 };
 
-export const loadConfig = (key: string): ClickConfig => {
-  const raw = localStorage.getItem(key);
-  if (!raw) return DEFAULT_CONFIG;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return DEFAULT_CONFIG;
-  }
-};
-
-export const saveConfig = (key: string, config: ClickConfig): void => {
-  localStorage.setItem(key, JSON.stringify(config));
+export const saveConfig = (config: AppConfig): void => {
+  localStorage.setItem('dt53_config', JSON.stringify(config));
 };
