@@ -1,25 +1,26 @@
-interface AutoclickerConfig {
+export interface ClickerConfig {
   interval: number;
-  clicksPerBurst: number;
-  randomization: number;
+  button: number;
+  maxClicks: number;
+  randomize: boolean;
 }
 
-const DEFAULT_CONFIG: AutoclickerConfig = {
+export const DEFAULT_CONFIG: ClickerConfig = {
   interval: 100,
-  clicksPerBurst: 1,
-  randomization: 0.1,
+  button: 0,
+  maxClicks: 1000,
+  randomize: true,
 };
 
-export const loadConfig = (overrides: Partial<AutoclickerConfig> = {}): AutoclickerConfig => ({
-  ...DEFAULT_CONFIG,
-  ...overrides,
-});
+export const validateConfig = (config: Partial<ClickerConfig>): ClickerConfig => {
+  return {
+    ...DEFAULT_CONFIG,
+    ...config,
+  };
+};
 
-export const validateConfig = (config: AutoclickerConfig): boolean => {
-  return (
-    config.interval > 0 &&
-    config.clicksPerBurst > 0 &&
-    config.randomization >= 0 &&
-    config.randomization <= 1
-  );
+export const getClickDelay = (base: number, randomize: boolean): number => {
+  if (!randomize) return base;
+  const jitter = Math.floor(Math.random() * 50);
+  return Math.max(10, base + (Math.random() > 0.5 ? jitter : -jitter));
 };
