@@ -1,26 +1,38 @@
-export interface ClickerConfig {
-  interval: number;
-  button: number;
-  maxClicks: number;
-  randomize: boolean;
+export interface AutoclickerConfig {
+  clickInterval: number;
+  clickType: 'single' | 'double';
+  button: 'left' | 'right' | 'middle';
+  hotkey: string;
+  repeatLimit: number;
+  cursorLock: boolean;
 }
 
-export const DEFAULT_CONFIG: ClickerConfig = {
-  interval: 100,
-  button: 0,
-  maxClicks: 1000,
-  randomize: true,
+export const DEFAULT_CONFIG: AutoclickerConfig = {
+  clickInterval: 100,
+  clickType: 'single',
+  button: 'left',
+  hotkey: 'F10',
+  repeatLimit: 0,
+  cursorLock: false,
 };
 
-export const validateConfig = (config: Partial<ClickerConfig>): ClickerConfig => {
-  return {
-    ...DEFAULT_CONFIG,
-    ...config,
-  };
-};
+export class ConfigLoader {
+  private currentConfig: AutoclickerConfig;
 
-export const getClickDelay = (base: number, randomize: boolean): number => {
-  if (!randomize) return base;
-  const jitter = Math.floor(Math.random() * 50);
-  return Math.max(10, base + (Math.random() > 0.5 ? jitter : -jitter));
-};
+  constructor(initialConfig?: Partial<AutoclickerConfig>) {
+    this.currentConfig = { ...DEFAULT_CONFIG, ...initialConfig };
+  }
+
+  public get(): AutoclickerConfig {
+    return this.currentConfig;
+  }
+
+  public update(newConfig: Partial<AutoclickerConfig>): AutoclickerConfig {
+    this.currentConfig = {
+      ...this.currentConfig,
+      ...newConfig,
+      clickInterval: Math.max(10, newConfig.clickInterval ?? this.currentConfig.clickInterval)
+    };
+    return this.currentConfig;
+  }
+}
