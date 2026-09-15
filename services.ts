@@ -1,39 +1,36 @@
-export interface ClickEvent {
-  x: number;
-  y: number;
+interface ClickConfig {
   interval: number;
+  clicks: number;
 }
 
 export class AutoClickerService {
-  private intervalId: NodeJS.Timeout | null = null;
-  private active: boolean = false;
+  public process(config: unknown): void {
+    const validated = this.validate(config);
+    if (!validated) {
+      throw new Error('invalid configuration parameters');
+    }
 
-  constructor(private config: ClickEvent) {}
-
-  public toggle(): void {
-    this.active = !this.active;
-    this.active ? this.start() : this.stop();
-  }
-
-  private start(): void {
-    this.intervalId = setInterval(() => {
-      this.executeClick();
-    }, this.config.interval);
-  }
-
-  private stop(): void {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
+    const { interval, clicks } = validated;
+    for (let i = 0; i < clicks; i++) {
+      setTimeout(() => this.executeClick(), i * interval);
     }
   }
 
-  private executeClick(): void {
-    const { x, y } = this.config;
-    process.stdout.write(`Click event at (${x}, ${y})\n`);
+  private validate(config: unknown): ClickConfig | null {
+    if (typeof config !== 'object' || config === null) return null;
+    const { interval, clicks } = config as any;
+
+    if (
+      typeof interval !== 'number' || interval < 10 ||
+      typeof clicks !== 'number' || clicks < 1
+    ) {
+      return null;
+    }
+
+    return { interval, clicks };
   }
 
-  public isActive(): boolean {
-    return this.active;
+  private executeClick(): void {
+    // Native click trigger logic
   }
 }
