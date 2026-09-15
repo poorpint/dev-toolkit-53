@@ -1,40 +1,43 @@
-export interface ClickConfig {
-  interval: number;
-  button: 'left' | 'right' | 'middle';
-  iterations: number;
+export interface ClickCoordinates {
+  x: number;
+  y: number;
 }
 
-export interface ClickResult {
-  success: boolean;
-  timestamp: number;
-  error?: string;
+export interface ClickOptions {
+  interval: number;
+  iterations?: number;
 }
 
 /**
- * Delays execution for a specified duration
+ * Delays execution for a specified duration in milliseconds.
  */
 export const sleep = (ms: number): Promise<void> => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
 /**
- * Validates click configuration parameters
+ * Validates screen coordinates within bound constraints.
  */
-export const validateConfig = (config: ClickConfig): boolean => {
-  return config.interval > 0 && config.iterations >= 0;
+export const validateCoordinates = (coords: ClickCoordinates, maxWidth: number, maxHeight: number): boolean => {
+  return (
+    coords.x >= 0 &&
+    coords.x <= maxWidth &&
+    coords.y >= 0 &&
+    coords.y <= maxHeight
+  );
 };
 
 /**
- * Formats timestamp into human-readable string
+ * Calculates the dynamic interval based on jitter factors.
  */
-export const formatTimestamp = (date: Date): string => {
-  return date.toISOString().replace('T', ' ').substring(0, 19);
+export const getJitteredInterval = (base: number, variance: number): number => {
+  const jitter = (Math.random() * 2 - 1) * variance;
+  return Math.max(0, base + jitter);
 };
 
 /**
- * Generates jitter for click intervals
+ * Formats click sequence metadata for logging purposes.
  */
-export const applyJitter = (base: number, factor: number = 0.1): number => {
-  const jitter = base * factor;
-  return base + (Math.random() * 2 - 1) * jitter;
+export const formatSequenceSummary = (options: ClickOptions): string => {
+  return `Sequence initialized: ${options.interval}ms interval, ${options.iterations ?? 'infinite'} iterations`;
 };
