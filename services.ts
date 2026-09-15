@@ -1,36 +1,26 @@
-interface ClickConfig {
-  interval: number;
-  clicks: number;
+export async function withRetry<T>(operation: () => Promise<T>, retries: number = 3, delay: number = 1000): Promise<T> {
+  let lastError: unknown;
+
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await operation();
+    } catch (err) {
+      lastError = err;
+      if (i < retries - 1) {
+        await new Promise((resolve) => setTimeout(resolve, delay * Math.pow(2, i)));
+      }
+    }
+  }
+
+  throw lastError;
 }
 
-export class AutoClickerService {
-  public process(config: unknown): void {
-    const validated = this.validate(config);
-    if (!validated) {
-      throw new Error('invalid configuration parameters');
+export const fetchWithRetry = async (url: string, options?: RequestInit): Promise<Response> => {
+  return withRetry(async () => {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-
-    const { interval, clicks } = validated;
-    for (let i = 0; i < clicks; i++) {
-      setTimeout(() => this.executeClick(), i * interval);
-    }
-  }
-
-  private validate(config: unknown): ClickConfig | null {
-    if (typeof config !== 'object' || config === null) return null;
-    const { interval, clicks } = config as any;
-
-    if (
-      typeof interval !== 'number' || interval < 10 ||
-      typeof clicks !== 'number' || clicks < 1
-    ) {
-      return null;
-    }
-
-    return { interval, clicks };
-  }
-
-  private executeClick(): void {
-    // Native click trigger logic
-  }
-}
+    return response;
+  });
+};
