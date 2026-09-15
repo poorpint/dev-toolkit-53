@@ -1,40 +1,39 @@
-export enum ClickerErrorType {
-  INVALID_COORDINATES = 'INVALID_COORDINATES',
-  INTERVAL_OUT_OF_BOUNDS = 'INTERVAL_OUT_OF_BOUNDS',
-  PERMISSION_DENIED = 'PERMISSION_DENIED',
-  SYSTEM_INTERRUPTED = 'SYSTEM_INTERRUPTED',
+export interface ClickConfig {
+  interval: number;
+  button: 'left' | 'right' | 'middle';
+  iterations: number | null;
+  randomize: boolean;
 }
 
-export interface ClickerError {
-  type: ClickerErrorType;
-  message: string;
+export interface Coordinates {
+  x: number;
+  y: number;
+}
+
+export interface ClickEvent {
   timestamp: number;
+  coordinates: Coordinates;
+  button: string;
 }
 
-export class ClickerException extends Error {
-  public readonly detail: ClickerError;
+export type State = 'idle' | 'running' | 'paused';
 
-  constructor(type: ClickerErrorType, message: string) {
-    super(message);
-    this.detail = {
-      type,
-      message,
-      timestamp: Date.now(),
-    };
-    Object.setPrototypeOf(this, ClickerException.prototype);
-  }
+export interface AppStatus {
+  state: State;
+  elapsed: number;
+  clicksPerformed: number;
 }
 
-export type ClickResult = { success: true } | { success: false; error: ClickerError };
-
-export const validateCoordinates = (x: number, y: number): void => {
-  if (x < 0 || y < 0) {
-    throw new ClickerException(ClickerErrorType.INVALID_COORDINATES, 'Coordinates must be non-negative');
-  }
+/**
+ * Configuration for mouse simulation behavior
+ */
+export type MouseAction = {
+  type: 'click' | 'hold' | 'release';
+  duration?: number;
+  target: Coordinates;
 };
 
-export const validateInterval = (ms: number): void => {
-  if (ms < 10) {
-    throw new ClickerException(ClickerErrorType.INTERVAL_OUT_OF_BOUNDS, 'Interval too low for hardware stability');
-  }
-};
+export interface Logger {
+  info(message: string): void;
+  error(message: string): void;
+}
