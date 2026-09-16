@@ -1,22 +1,43 @@
-export type ClickInterval = number;
+const requestFrame = typeof requestAnimationFrame !== 'undefined'
+  ? requestAnimationFrame
+  : (cb: (time: number) => void) => setTimeout(() => cb(performance.now()), 16);
 
-export interface ClickConfig {
-  delay: ClickInterval;
-  iterations: number;
+export class PreciseClickScheduler {
+  private active = false;
+  private lastTick = 0;
+
+  constructor(
+    private readonly intervalMs: number,
+    private readonly callback: () => void
+  ) {}
+
+  public start(): void {
+    if (this.active) return;
+    this.active = true;
+    this.lastTick = performance.now();
+    requestFrame(this.loop);
+  }
+
+  public stop(): void {
+    this.active = false;
+  }
+
+  private loop = (now: number): void => {
+    if (!this.active) return;
+
+    const delta = now - this.lastTick;
+
+    if (delta >= this.intervalMs) {
+      const ticks = Math.floor(delta / this.intervalMs);
+      for (let i = 0; i < ticks; i++) {
+        if (!this.active) break;
+        this.callback();
+      }
+      this.lastTick = now - (delta % this.intervalMs);
+    }
+
+    if (this.active) {
+      requestFrame(this.loop);
+    }
+  };
 }
-
-export const validateConfig = (config: ClickConfig): boolean => {
-  return config.delay > 0 && config.iterations >= 0;
-};
-
-export const formatTimestamp = (date: Date): string => {
-  return date.toISOString().split('T')[1].slice(0, 8);
-};
-
-export const sleep = (ms: number): Promise<void> => {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-};
-
-export const createLogger = (prefix: string) => {
-  return (message: string) => console.log(`[${prefix}] ${formatTimestamp(new Date())}: ${message}`);
-};
