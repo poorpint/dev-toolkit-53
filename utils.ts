@@ -1,43 +1,38 @@
-export interface ClickCoordinates {
-  x: number;
-  y: number;
-}
+export const createBuffer = (size: number): Uint32Array => new Uint32Array(size);
 
-export interface ClickOptions {
-  interval: number;
-  iterations?: number;
-}
-
-/**
- * Delays execution for a specified duration in milliseconds.
- */
-export const sleep = (ms: number): Promise<void> => {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+export const batchProcess = <T>(
+  items: T[],
+  callback: (item: T) => void,
+  chunkSize: number = 100
+): void => {
+  let i = 0;
+  const len = items.length;
+  while (i < len) {
+    const end = Math.min(i + chunkSize, len);
+    for (let j = i; j < end; j++) {
+      callback(items[j]);
+    }
+    i = end;
+  }
 };
 
-/**
- * Validates screen coordinates within bound constraints.
- */
-export const validateCoordinates = (coords: ClickCoordinates, maxWidth: number, maxHeight: number): boolean => {
-  return (
-    coords.x >= 0 &&
-    coords.x <= maxWidth &&
-    coords.y >= 0 &&
-    coords.y <= maxHeight
-  );
+export const memoize = <T, R>(fn: (arg: T) => R): ((arg: T) => R) => {
+  const cache = new Map<T, R>();
+  return (arg: T): R => {
+    if (cache.has(arg)) return cache.get(arg)!;
+    const result = fn(arg);
+    cache.set(arg, result);
+    return result;
+  };
 };
 
-/**
- * Calculates the dynamic interval based on jitter factors.
- */
-export const getJitteredInterval = (base: number, variance: number): number => {
-  const jitter = (Math.random() * 2 - 1) * variance;
-  return Math.max(0, base + jitter);
-};
-
-/**
- * Formats click sequence metadata for logging purposes.
- */
-export const formatSequenceSummary = (options: ClickOptions): string => {
-  return `Sequence initialized: ${options.interval}ms interval, ${options.iterations ?? 'infinite'} iterations`;
+export const throttle = (fn: Function, ms: number) => {
+  let last = 0;
+  return (...args: any[]) => {
+    const now = performance.now();
+    if (now - last >= ms) {
+      last = now;
+      fn(...args);
+    }
+  };
 };
