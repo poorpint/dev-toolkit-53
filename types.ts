@@ -1,39 +1,36 @@
 export interface ClickConfig {
-  interval: number;
+  delay: number;
   button: 'left' | 'right' | 'middle';
-  iterations: number | null;
-  randomize: boolean;
+  iterations: number;
 }
 
-export interface Coordinates {
+export interface Coordinate {
   x: number;
   y: number;
 }
 
 export interface ClickEvent {
   timestamp: number;
-  coordinates: Coordinates;
-  button: string;
+  position: Coordinate;
+  success: boolean;
 }
 
-export type State = 'idle' | 'running' | 'paused';
-
-export interface AppStatus {
-  state: State;
-  elapsed: number;
-  clicksPerformed: number;
+export interface StateManager {
+  isActive: boolean;
+  toggle(): void;
+  reset(): void;
 }
 
-/**
- * Configuration for mouse simulation behavior
- */
-export type MouseAction = {
-  type: 'click' | 'hold' | 'release';
-  duration?: number;
-  target: Coordinates;
+export type ClickResult = {
+  status: 'success' | 'failure';
+  error?: string;
 };
 
-export interface Logger {
-  info(message: string): void;
-  error(message: string): void;
+/**
+ * Represents the current execution context for the autoclicker daemon
+ */
+export interface DaemonContext {
+  interval: NodeJS.Timeout | null;
+  config: ClickConfig;
+  history: ClickEvent[];
 }
