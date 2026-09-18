@@ -1,38 +1,37 @@
-export const createBuffer = (size: number): Uint32Array => new Uint32Array(size);
+export interface ClickConfig {
+  interval: number;
+  button: 'left' | 'right' | 'middle';
+  iterations: number | null;
+  randomization: number;
+}
 
-export const batchProcess = <T>(
-  items: T[],
-  callback: (item: T) => void,
-  chunkSize: number = 100
-): void => {
-  let i = 0;
-  const len = items.length;
-  while (i < len) {
-    const end = Math.min(i + chunkSize, len);
-    for (let j = i; j < end; j++) {
-      callback(items[j]);
-    }
-    i = end;
+export const validateConfig = (config: Partial<ClickConfig>): ClickConfig => {
+  const defaults: ClickConfig = {
+    interval: 100,
+    button: 'left',
+    iterations: null,
+    randomization: 0,
+  };
+
+  return {
+    interval: Math.max(1, config.interval ?? defaults.interval),
+    button: config.button ?? defaults.button,
+    iterations: config.iterations ?? defaults.iterations,
+    randomization: Math.min(100, Math.max(0, config.randomization ?? defaults.randomization)),
+  };
+};
+
+export const calculateDelay = (base: number, jitter: number): number => {
+  const variance = base * (jitter / 100);
+  return base - variance + Math.random() * (2 * variance);
+};
+
+export const serializeClickData = (data: ClickConfig): string => JSON.stringify(data);
+
+export const deserializeClickData = (json: string): ClickConfig => {
+  try {
+    return JSON.parse(json) as ClickConfig;
+  } catch {
+    throw new Error('invalid click configuration format');
   }
-};
-
-export const memoize = <T, R>(fn: (arg: T) => R): ((arg: T) => R) => {
-  const cache = new Map<T, R>();
-  return (arg: T): R => {
-    if (cache.has(arg)) return cache.get(arg)!;
-    const result = fn(arg);
-    cache.set(arg, result);
-    return result;
-  };
-};
-
-export const throttle = (fn: Function, ms: number) => {
-  let last = 0;
-  return (...args: any[]) => {
-    const now = performance.now();
-    if (now - last >= ms) {
-      last = now;
-      fn(...args);
-    }
-  };
 };
