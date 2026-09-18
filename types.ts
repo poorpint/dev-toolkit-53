@@ -1,36 +1,34 @@
-export interface ClickConfig {
-  delay: number;
-  button: 'left' | 'right' | 'middle';
-  iterations: number;
-}
+export type ClickButton = 'left' | 'right' | 'middle';
 
-export interface Coordinate {
+export interface ClickCoordinates {
   x: number;
   y: number;
 }
 
-export interface ClickEvent {
-  timestamp: number;
-  position: Coordinate;
-  success: boolean;
+export interface ClickTarget {
+  type: 'fixed' | 'cursor';
+  coordinates?: ClickCoordinates;
 }
 
-export interface StateManager {
-  isActive: boolean;
-  toggle(): void;
-  reset(): void;
+export interface ClickInterval {
+  hours: number;
+  minutes: number;
+  seconds: number;
+  milliseconds: number;
 }
 
-export type ClickResult = {
-  status: 'success' | 'failure';
-  error?: string;
-};
+export interface AutoclickerConfig {
+  interval: ClickInterval;
+  button: ClickButton;
+  clickType: 'single' | 'double';
+  repeatLimit: number;
+  target: ClickTarget;
+}
 
-/**
- * Represents the current execution context for the autoclicker daemon
- */
-export interface DaemonContext {
-  interval: NodeJS.Timeout | null;
-  config: ClickConfig;
-  history: ClickEvent[];
+export type AutoclickerStatus = 'idle' | 'running' | 'paused';
+
+export interface AutoclickerState {
+  status: AutoclickerStatus;
+  clicksCompleted: number;
+  elapsedTime: number;
 }
