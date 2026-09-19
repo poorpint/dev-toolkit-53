@@ -1,38 +1,29 @@
-export interface AutoclickerConfig {
-  clickInterval: number;
-  clickType: 'single' | 'double';
-  button: 'left' | 'right' | 'middle';
-  hotkey: string;
-  repeatLimit: number;
-  cursorLock: boolean;
+export interface ClickerConfig {
+  interval: number;
+  button: 'left' | 'right';
+  repeat: number | 'infinite';
 }
 
-export const DEFAULT_CONFIG: AutoclickerConfig = {
-  clickInterval: 100,
-  clickType: 'single',
+export const DEFAULT_CONFIG: ClickerConfig = {
+  interval: 100,
   button: 'left',
-  hotkey: 'F10',
-  repeatLimit: 0,
-  cursorLock: false,
+  repeat: 'infinite',
 };
 
-export class ConfigLoader {
-  private currentConfig: AutoclickerConfig;
+export const validateConfig = (config: Partial<ClickerConfig>): ClickerConfig => {
+  return {
+    interval: Math.max(10, config.interval ?? DEFAULT_CONFIG.interval),
+    button: config.button ?? DEFAULT_CONFIG.button,
+    repeat: config.repeat ?? DEFAULT_CONFIG.repeat,
+  };
+};
 
-  constructor(initialConfig?: Partial<AutoclickerConfig>) {
-    this.currentConfig = { ...DEFAULT_CONFIG, ...initialConfig };
-  }
+export type StateUpdate = {
+  active: boolean;
+  timestamp: number;
+};
 
-  public get(): AutoclickerConfig {
-    return this.currentConfig;
-  }
-
-  public update(newConfig: Partial<AutoclickerConfig>): AutoclickerConfig {
-    this.currentConfig = {
-      ...this.currentConfig,
-      ...newConfig,
-      clickInterval: Math.max(10, newConfig.clickInterval ?? this.currentConfig.clickInterval)
-    };
-    return this.currentConfig;
-  }
-}
+export const INITIAL_STATE: StateUpdate = {
+  active: false,
+  timestamp: Date.now(),
+};
