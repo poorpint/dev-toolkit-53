@@ -1,33 +1,40 @@
 export interface ClickConfig {
   interval: number;
-  button: 'left' | 'right' | 'middle';
-  iterations: number | null;
-  randomizationMs: number;
+  duration: number;
+  clicks: number;
 }
 
-export const validateConfig = (config: Partial<ClickConfig>): ClickConfig => {
-  const defaults: ClickConfig = {
-    interval: 100,
-    button: 'left',
-    iterations: null,
-    randomizationMs: 0,
-  };
+export const validateClickConfig = (config: Partial<ClickConfig>): ClickConfig => {
+  const interval = config.interval ?? 100;
+  const duration = config.duration ?? 0;
+  const clicks = config.clicks ?? 1;
 
-  return {
-    ...defaults,
-    ...config,
-    interval: Math.max(10, config.interval || defaults.interval),
-    randomizationMs: Math.max(0, config.randomizationMs || defaults.randomizationMs),
-  };
+  if (interval < 10) {
+    throw new Error('Interval must be at least 10ms');
+  }
+
+  if (duration < 0) {
+    throw new Error('Duration cannot be negative');
+  }
+
+  if (clicks < 0) {
+    throw new Error('Click count cannot be negative');
+  }
+
+  return { interval, duration, clicks };
 };
 
-export const getNextDelay = (base: number, jitter: number): number => {
-  const offset = Math.random() * jitter * 2 - jitter;
-  return Math.max(1, base + offset);
-};
+export const processClickLoop = async (config: unknown, callback: () => void): Promise<void> => {
+  try {
+    const validated = validateClickConfig(config as Partial<ClickConfig>);
+    let count = 0;
 
-export const formatDuration = (ms: number): string => {
-  const seconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(seconds / 60);
-  return `${minutes}m ${seconds % 60}s`;
+    while (validated.clicks === 0 || count < validated.clicks) {
+      callback();
+      count++;
+      await new Promise((resolve) => setTimeout(resolve, validated.interval));
+    }
+  } catch (error) {
+    console.error('Processing failed:', error instanceof Error ? error.message : 'Unknown error');
+  }
 };
