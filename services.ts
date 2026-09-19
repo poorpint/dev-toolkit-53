@@ -1,26 +1,21 @@
-export async function withRetry<T>(operation: () => Promise<T>, retries: number = 3, delay: number = 1000): Promise<T> {
-  let lastError: unknown;
-
-  for (let i = 0; i < retries; i++) {
-    try {
-      return await operation();
-    } catch (err) {
-      lastError = err;
-      if (i < retries - 1) {
-        await new Promise((resolve) => setTimeout(resolve, delay * Math.pow(2, i)));
-      }
-    }
+export async function withRetry<T>(
+  operation: () => Promise<T>,
+  retries: number = 3,
+  delay: number = 1000
+): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (retries <= 0) throw error;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    return withRetry(operation, retries - 1, delay);
   }
-
-  throw lastError;
 }
 
-export const fetchWithRetry = async (url: string, options?: RequestInit): Promise<Response> => {
+export const fetchClickConfig = async (url: string): Promise<any> => {
   return withRetry(async () => {
-    const response = await fetch(url, options);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    return response.json();
   });
 };
